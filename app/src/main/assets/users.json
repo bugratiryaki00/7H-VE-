@@ -1,0 +1,7 @@
+[
+  { "id": "u1", "name": "Ada", "email": "ada@yeditepe.edu.tr", "department": "CS", "skills": ["Kotlin","Compose"], "interests": ["Mobile"], "badges": ["mentor"], "availability": 80 },
+  { "id": "u2", "name": "Deniz", "email": "deniz@yeditepe.edu.tr", "department": "Design", "skills": ["Figma","UX"], "interests": ["UI"], "badges": [], "availability": 70 },
+  { "id": "u3", "name": "Efe", "email": "efe@yeditepe.edu.tr", "department": "EE", "skills": ["Python"], "interests": ["ML"], "badges": [], "availability": 60 }
+]
+
+

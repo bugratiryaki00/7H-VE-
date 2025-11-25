@@ -1,0 +1,6 @@
+[
+  { "userId": "u1", "suggestedUserId": "u2", "score": 0.82 },
+  { "userId": "u1", "suggestedUserId": "u3", "score": 0.65 }
+]
+
+

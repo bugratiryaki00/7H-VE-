@@ -1,0 +1,6 @@
+[
+  { "id": "r1", "projectId": "p1", "title": "UI Designer", "requiredSkills": ["Figma"], "level": "junior" },
+  { "id": "r2", "projectId": "p1", "title": "Backend Dev", "requiredSkills": ["Node"], "level": "mid" }
+]
+
+

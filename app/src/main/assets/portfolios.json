@@ -1,0 +1,25 @@
+[
+  {
+    "userId": "u1",
+    "bio": "Android dev",
+    "imageUrl": null,
+    "projects": [
+      {
+        "id": "p1",
+        "ownerId": "u1",
+        "title": "7hive App",
+        "description": "Campus network app",
+        "tags": ["Android", "Compose"],
+        "imageUrl": null
+      }
+    ]
+  },
+  {
+    "userId": "u2",
+    "bio": "Designer",
+    "imageUrl": null,
+    "projects": []
+  }
+]
+
+

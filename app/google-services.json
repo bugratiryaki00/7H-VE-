@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "957465551731",
+    "project_id": "proto7hivefb",
+    "storage_bucket": "proto7hivefb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:957465551731:android:ec093705848ab7eafb5b06",
+        "android_client_info": {
+          "package_name": "com.example.proto7hive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9F2TnW-6yGJFveVcXe9V6LTMrU0TWLgM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

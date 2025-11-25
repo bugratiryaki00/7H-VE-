@@ -1,0 +1,20 @@
+[
+  {
+    "id": "a1",
+    "title": "Hackathon",
+    "body": "Weekend hackathon",
+    "dateIso": "2025-11-01",
+    "tags": ["event"],
+    "imageUrl": null
+  },
+  {
+    "id": "a2",
+    "title": "Workshop: Compose",
+    "body": "Intro to Jetpack Compose",
+    "dateIso": "2025-11-10",
+    "tags": ["workshop"],
+    "imageUrl": null
+  }
+]
+
+
