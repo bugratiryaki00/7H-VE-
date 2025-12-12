@@ -8,7 +8,7 @@ data class User(
     val id: String = "",
     val name: String = "",
     val email: String = "",
-    val department: String? = null,
+    val department: String? = null, //Should
     val skills: List<String> = emptyList(),
     val interests: List<String> = emptyList(),
     val badges: List<String> = emptyList(),
@@ -33,8 +33,8 @@ data class Role(
     val id: String = "",
     val projectId: String = "",
     val title: String = "",
-    val requiredSkills: List<String> = emptyList(),
-    val level: String? = null // junior/mid/senior benzeri basit etiket
+    val requiredSkills: List<String> = emptyList(), //Should
+    val level: String? = null 
 )
 
 @Serializable
