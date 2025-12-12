@@ -12,7 +12,10 @@ data class User(
     val skills: List<String> = emptyList(),
     val interests: List<String> = emptyList(),
     val badges: List<String> = emptyList(),
-    val availability: Int? = null // 0-100 arası uygunluk skoru
+    val availability: Int? = null, // 0-100 arası uygunluk skoru
+    val connections: List<String> = emptyList(), // Bağlantı yapılan kullanıcı ID'leri
+    val profileImageUrl: String? = null,
+    val bio: String? = null
 )
 
 @Serializable
@@ -50,6 +53,28 @@ data class Announcement(
     val dateIso: String = "",
     val tags: List<String> = emptyList(),
     val imageUrl: String? = null
+)
+
+@Serializable
+data class Post(
+    val id: String = "",
+    val userId: String = "",
+    val text: String = "",
+    val imageUrl: String? = null,
+    val timestamp: Long = 0L // Unix timestamp (milisaniye)
+)
+
+@Serializable
+data class Job(
+    val id: String = "",
+    val title: String = "",
+    val company: String = "",
+    val location: String = "",
+    val workType: String = "", // Full-time, Part-time, Remote, Hybrid, On-site
+    val description: String = "",
+    val requiredSkills: List<String> = emptyList(),
+    val imageUrl: String? = null,
+    val userId: String = "" // İşi paylaşan kullanıcı ID'si (işveren)
 )
 
 @Serializable

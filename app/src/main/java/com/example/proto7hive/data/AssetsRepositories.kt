@@ -25,6 +25,11 @@ class AssetsProjectRepository(private val assets: AssetManager) : ProjectReposit
         return json.decodeFromString(ListSerializer(Project.serializer()), text)
     }
 
+    override suspend fun getProjectsByOwnerId(ownerId: String): List<Project> {
+        val allProjects = getProjects()
+        return allProjects.filter { it.ownerId == ownerId }
+    }
+
     override suspend fun getRoles(projectId: String): List<Role> {
         val text = assets.open("roles.json").use { it.readBytes().decodeToString() }
         val all = json.decodeFromString(ListSerializer(Role.serializer()), text)
