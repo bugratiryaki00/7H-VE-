@@ -37,10 +37,16 @@ import com.example.proto7hive.ui.connections.ConnectionsRoute
 import com.example.proto7hive.ui.createpost.CreatePostRoute
 import com.example.proto7hive.ui.jobs.JobsRoute
 import com.example.proto7hive.ui.profile.ProfileRoute
-import com.example.proto7hive.ui.onboarding.OnboardingRoute
+import com.example.proto7hive.ui.auth.WelcomeScreen
+import com.example.proto7hive.ui.auth.LoginScreen
+import com.example.proto7hive.ui.auth.SignUpFlowScreen
+import com.example.proto7hive.ui.auth.ForgotPasswordScreen
 
 object Routes {
-    const val ONBOARDING = "onboarding"
+    const val WELCOME = "welcome"
+    const val LOGIN = "login"
+    const val SIGN_UP = "sign_up"
+    const val FORGOT_PASSWORD = "forgot_password"
     const val HOME = "home" // Portfolio yerine
     const val CONNECTIONS = "connections" // Projects yerine
     const val CREATE_POST = "create_post" // Announcements yerine
@@ -65,19 +71,54 @@ fun RootScaffold() {
     var homeRefreshKey by remember { mutableStateOf(0) }
 
     Scaffold(
-        bottomBar = { if (currentRoute != Routes.ONBOARDING) BottomBar(navController) }
+        bottomBar = { 
+            if (currentRoute !in listOf(Routes.WELCOME, Routes.LOGIN, Routes.SIGN_UP, Routes.FORGOT_PASSWORD)) {
+                BottomBar(navController) 
+            }
+        }
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.ONBOARDING,
+            startDestination = Routes.WELCOME,
             modifier = Modifier
         ) {
-            composable(Routes.ONBOARDING) { 
-                OnboardingRoute(onContinue = { 
-                    navController.navigate(Routes.HOME) { 
-                        popUpTo(Routes.ONBOARDING) { inclusive = true } 
-                    } 
-                }) 
+            composable(Routes.WELCOME) {
+                WelcomeScreen(
+                    onLoginClick = {
+                        navController.navigate(Routes.LOGIN)
+                    },
+                    onSignUpClick = {
+                        navController.navigate(Routes.SIGN_UP)
+                    }
+                )
+            }
+            composable(Routes.LOGIN) {
+                LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(Routes.WELCOME) { inclusive = true }
+                        }
+                    },
+                    onForgotPasswordClick = {
+                        navController.navigate(Routes.FORGOT_PASSWORD)
+                    }
+                )
+            }
+            composable(Routes.FORGOT_PASSWORD) {
+                ForgotPasswordScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable(Routes.SIGN_UP) {
+                SignUpFlowScreen(
+                    onSignUpComplete = {
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(Routes.WELCOME) { inclusive = true }
+                        }
+                    }
+                )
             }
             composable(Routes.HOME) { 
                 HomeFeedRoute(key = homeRefreshKey)
@@ -103,7 +144,7 @@ fun RootScaffold() {
             composable(Routes.PROFILE) { 
                 ProfileRoute(
                     onNavigateToOnboarding = { 
-                        navController.navigate(Routes.ONBOARDING) { 
+                        navController.navigate(Routes.WELCOME) { 
                             popUpTo(0) { inclusive = true } 
                         } 
                     }

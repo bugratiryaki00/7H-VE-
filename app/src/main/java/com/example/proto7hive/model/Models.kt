@@ -7,7 +7,11 @@ import kotlinx.serialization.Serializable
 data class User(
     val id: String = "",
     val name: String = "",
+    val surname: String = "",
     val email: String = "",
+    val userType: String? = null, // Student, Staff, Academician, Graduate
+    val gender: String? = null, // Male, Female, The Other, I don't want to specify
+    val dateOfBirth: Long? = null, // Unix timestamp (milisaniye)
     val department: String? = null, //Should
     val skills: List<String> = emptyList(),
     val interests: List<String> = emptyList(),

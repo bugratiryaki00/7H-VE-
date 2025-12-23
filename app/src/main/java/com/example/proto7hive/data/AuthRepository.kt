@@ -72,7 +72,32 @@ class AuthRepository(
         auth.signOut()
     }
 
+    suspend fun sendPasswordResetEmail(email: String): AuthResult {
+        return try {
+            auth.sendPasswordResetEmail(email).await()
+            AuthResult(
+                success = true,
+                message = "Şifre sıfırlama e-postası gönderildi"
+            )
+        } catch (e: Exception) {
+            AuthResult(
+                success = false,
+                message = e.message ?: "E-posta gönderme hatası"
+            )
+        }
+    }
+
     fun getCurrentUser(): FirebaseUser? = auth.currentUser
 
     fun isEmailVerified(): Boolean = auth.currentUser?.isEmailVerified ?: false
+    
+    suspend fun reloadUser(): FirebaseUser? {
+        return try {
+            val user = auth.currentUser
+            user?.reload()?.await()
+            user
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

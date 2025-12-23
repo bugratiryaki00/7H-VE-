@@ -89,6 +89,11 @@ class AuthViewModel(
     fun clearMessages() {
         _uiState.value = _uiState.value.copy(message = null, errorMessage = null)
     }
+    
+    fun resetSignInState() {
+        // UI state'ini resetle, ama Firebase'den çıkış yapma
+        _uiState.value = _uiState.value.copy(isSignedIn = false, user = null)
+    }
 }
 
 class AuthViewModelFactory(
