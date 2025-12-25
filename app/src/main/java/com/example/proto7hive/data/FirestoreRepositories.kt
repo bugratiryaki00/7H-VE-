@@ -1,6 +1,7 @@
 package com.example.proto7hive.data
 
 import com.example.proto7hive.model.Announcement
+import com.example.proto7hive.model.Comment
 import com.example.proto7hive.model.Project
 import com.example.proto7hive.model.PortfolioCard
 import com.example.proto7hive.model.MatchSuggestion
@@ -239,5 +240,51 @@ class FirestoreJobRepository(
     override suspend fun unsaveJob(userId: String, jobId: String) {
         db.collection("users").document(userId)
             .collection("savedJobs").document(jobId).delete().await()
+    }
+}
+
+class FirestoreCommentRepository(
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+) : CommentRepository {
+    
+    override suspend fun getCommentsByPostId(postId: String): List<Comment> {
+        val snapshot = db.collection("comments")
+            .whereEqualTo("postId", postId)
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.ASCENDING)
+            .get()
+            .await()
+        
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Comment::class.java)?.copy(id = doc.id)
+        }
+    }
+    
+    override suspend fun getCommentsByJobId(jobId: String): List<Comment> {
+        val snapshot = db.collection("comments")
+            .whereEqualTo("jobId", jobId)
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.ASCENDING)
+            .get()
+            .await()
+        
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Comment::class.java)?.copy(id = doc.id)
+        }
+    }
+    
+    override suspend fun createComment(comment: Comment): String {
+        val doc = db.collection("comments").document()
+        val data = hashMapOf(
+            "postId" to (comment.postId ?: ""),
+            "jobId" to (comment.jobId ?: ""),
+            "userId" to comment.userId,
+            "text" to comment.text,
+            "timestamp" to comment.timestamp
+        )
+        doc.set(data).await()
+        return doc.id
+    }
+    
+    override suspend fun deleteComment(commentId: String) {
+        db.collection("comments").document(commentId).delete().await()
     }
 }

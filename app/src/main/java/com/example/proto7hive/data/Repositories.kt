@@ -1,6 +1,7 @@
 package com.example.proto7hive.data
 
 import com.example.proto7hive.model.Announcement
+import com.example.proto7hive.model.Comment
 import com.example.proto7hive.model.Job
 import com.example.proto7hive.model.MatchSuggestion
 import com.example.proto7hive.model.PortfolioCard
@@ -58,6 +59,13 @@ interface JobRepository {
     suspend fun getSavedJobs(userId: String): List<String> // Kaydedilen iş ID'leri (users/{userId}/savedJobs subcollection)
     suspend fun saveJob(userId: String, jobId: String): Unit // İş kaydet
     suspend fun unsaveJob(userId: String, jobId: String): Unit // İş kaydını kaldır
+}
+
+interface CommentRepository {
+    suspend fun getCommentsByPostId(postId: String): List<Comment>
+    suspend fun getCommentsByJobId(jobId: String): List<Comment>
+    suspend fun createComment(comment: Comment): String // Yeni yorum oluştur (döner: commentId)
+    suspend fun deleteComment(commentId: String): Unit // Yorum sil
 }
 
 class MockPortfolioRepository : PortfolioRepository {

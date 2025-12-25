@@ -5,14 +5,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.proto7hive.data.PostRepository
 import com.example.proto7hive.data.FirestorePostRepository
-import com.example.proto7hive.data.ProjectRepository
-import com.example.proto7hive.data.FirestoreProjectRepository
+import com.example.proto7hive.data.JobRepository
+import com.example.proto7hive.data.FirestoreJobRepository
 import com.example.proto7hive.data.UserRepository
 import com.example.proto7hive.data.FirestoreUserRepository
 import com.example.proto7hive.data.ConnectionRepository
 import com.example.proto7hive.data.FirestoreConnectionRepository
 import com.example.proto7hive.model.Post
-import com.example.proto7hive.model.Project
+import com.example.proto7hive.model.Job
 import com.example.proto7hive.model.User
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +23,7 @@ data class ProfileUiState(
     val isLoading: Boolean = true,
     val user: User? = null,
     val posts: List<Post> = emptyList(),
-    val projects: List<Project> = emptyList(),
+    val jobs: List<Job> = emptyList(),
     val connectionsCount: Int = 0,
     val errorMessage: String? = null
 )
@@ -31,7 +31,7 @@ data class ProfileUiState(
 class ProfileViewModel(
     private val userRepository: UserRepository = FirestoreUserRepository(),
     private val postRepository: PostRepository = FirestorePostRepository(),
-    private val projectRepository: ProjectRepository = FirestoreProjectRepository(),
+    private val jobRepository: JobRepository = FirestoreJobRepository(),
     private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository()
 ) : ViewModel() {
 
@@ -61,8 +61,8 @@ class ProfileViewModel(
                 // Post'ları çek
                 val posts = postRepository.getPostsByUserId(currentUser.uid)
                 
-                // Projeleri çek
-                val projects = projectRepository.getProjectsByOwnerId(currentUser.uid)
+                // Jobs'ları çek
+                val jobs = jobRepository.getJobsByUserId(currentUser.uid)
                 
                 // Bağlantı sayısı
                 val connections = connectionRepository.getConnections(currentUser.uid)
@@ -72,7 +72,7 @@ class ProfileViewModel(
                     isLoading = false,
                     user = user,
                     posts = posts,
-                    projects = projects,
+                    jobs = jobs,
                     connectionsCount = connectionsCount
                 )
             } catch (t: Throwable) {
@@ -92,13 +92,13 @@ class ProfileViewModel(
 class ProfileViewModelFactory(
     private val userRepository: UserRepository = FirestoreUserRepository(),
     private val postRepository: PostRepository = FirestorePostRepository(),
-    private val projectRepository: ProjectRepository = FirestoreProjectRepository(),
+    private val jobRepository: JobRepository = FirestoreJobRepository(),
     private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository()
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
-            return ProfileViewModel(userRepository, postRepository, projectRepository, connectionRepository) as T
+            return ProfileViewModel(userRepository, postRepository, jobRepository, connectionRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

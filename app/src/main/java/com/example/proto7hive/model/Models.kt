@@ -65,7 +65,8 @@ data class Post(
     val userId: String = "",
     val text: String = "",
     val imageUrl: String? = null,
-    val timestamp: Long = 0L // Unix timestamp (milisaniye)
+    val timestamp: Long = 0L, // Unix timestamp (milisaniye)
+    val postType: String = "post" // "post" veya "work"
 )
 
 @Serializable
@@ -86,6 +87,16 @@ data class MatchSuggestion(
     val userId: String = "",
     val suggestedUserId: String = "",
     @SerialName("score") val score: Double = 0.0
+)
+
+@Serializable
+data class Comment(
+    val id: String = "",
+    val postId: String? = null, // Post ID'si (post için)
+    val jobId: String? = null, // Job ID'si (work için)
+    val userId: String = "", // Yorum yapan kullanıcı ID'si
+    val text: String = "", // Yorum metni
+    val timestamp: Long = 0L // Unix timestamp (milisaniye)
 )
 
 

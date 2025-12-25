@@ -16,6 +16,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.navigation.NavController
+import com.example.proto7hive.ui.screens.Routes
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,16 +35,22 @@ import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 
 @Composable
-fun ConnectionsRoute() {
+fun ConnectionsRoute(
+    navController: androidx.navigation.NavController? = null
+) {
     val viewModel: ConnectionsViewModel = viewModel(
         factory = ConnectionsViewModelFactory()
     )
-    ConnectionsScreen(viewModel = viewModel)
+    ConnectionsScreen(
+        viewModel = viewModel,
+        navController = navController
+    )
 }
 
 @Composable
 fun ConnectionsScreen(
-    viewModel: ConnectionsViewModel
+    viewModel: ConnectionsViewModel,
+    navController: androidx.navigation.NavController? = null
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -62,7 +70,7 @@ fun ConnectionsScreen(
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(32.dp),
+                modifier = Modifier.height(72.dp),
                 contentScale = ContentScale.Fit
             )
         }
@@ -103,7 +111,7 @@ fun ConnectionsScreen(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 16.dp),
+                    contentPadding = PaddingValues(start = 0.dp, top = 16.dp, end = 0.dp, bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     // Recommendations Section
@@ -163,7 +171,10 @@ fun ConnectionsScreen(
                                     state.myConnections.forEach { user ->
                                         ConnectionCard(
                                             user = user,
-                                            onRemoveClick = { viewModel.removeConnection(user.id) }
+                                            onRemoveClick = { viewModel.removeConnection(user.id) },
+                                            onClick = {
+                                                navController?.navigate(Routes.PROFILE)
+                                            }
                                         )
                                     }
                                 }
@@ -284,10 +295,13 @@ fun RecommendationCard(
 @Composable
 fun ConnectionCard(
     user: User,
-    onRemoveClick: () -> Unit
+    onRemoveClick: () -> Unit,
+    onClick: (() -> Unit)? = null
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = onClick != null) { onClick?.invoke() },
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF2A2A2A)
         ),
@@ -333,7 +347,7 @@ fun ConnectionCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = user.name,
+                    text = listOfNotNull(user.name, user.surname).joinToString(" "),
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,

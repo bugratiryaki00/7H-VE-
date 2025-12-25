@@ -1,5 +1,6 @@
 package com.example.proto7hive.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -46,20 +47,27 @@ fun SearchBar(
             },
             modifier = Modifier
                 .weight(1f)
-                .height(48.dp),
-            shape = RoundedCornerShape(12.dp),
+                .height(48.dp)
+                .clickable { onSearchClick() },
+            shape = RoundedCornerShape(24.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = BrandYellow,
-                unfocusedBorderColor = BrandYellow.copy(alpha = 0.7f),
+                unfocusedBorderColor = BrandYellow,
+                disabledBorderColor = BrandYellow,
                 cursorColor = BrandYellow,
                 focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White.copy(alpha = 0.7f),
+                unfocusedTextColor = Color.White,
+                disabledTextColor = Color.White,
                 focusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
-                unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f)
+                unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                disabledPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent
             ),
             singleLine = true,
             readOnly = true,
-            enabled = false // Şimdilik sadece görsel, tıklanınca search ekranına gidecek
+            enabled = true
         )
         
         // Notification Icon

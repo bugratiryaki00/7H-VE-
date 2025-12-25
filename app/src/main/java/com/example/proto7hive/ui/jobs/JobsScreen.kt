@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -32,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.proto7hive.R
 import com.example.proto7hive.model.Job
+import com.example.proto7hive.model.User
 import com.example.proto7hive.ui.components.SearchBar
 import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
@@ -66,7 +68,7 @@ fun JobsScreen(
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(32.dp),
+                modifier = Modifier.height(72.dp),
                 contentScale = ContentScale.Fit
             )
         }
@@ -107,24 +109,24 @@ fun JobsScreen(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 16.dp),
+                    contentPadding = PaddingValues(start = 0.dp, top = 16.dp, end = 0.dp, bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     // Job interests for you Section
                     item {
-                        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 text = "Job interests for you!",
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 4.dp)
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
                             )
                             Text(
                                 text = "Take a look at these job opportunities that we chose for you.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.padding(bottom = 12.dp)
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
                             )
 
                             if (state.recommendedJobs.isEmpty()) {
@@ -132,15 +134,17 @@ fun JobsScreen(
                                     text = "Henüz önerilen iş yok",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Color.White.copy(alpha = 0.5f),
-                                    modifier = Modifier.padding(vertical = 8.dp)
+                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
                                 )
                             } else {
                                 Column(
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     state.recommendedJobs.forEach { job ->
+                                        val user = state.users[job.userId]
                                         JobCard(
                                             job = job,
+                                            user = user,
                                             isSaved = false,
                                             onSaveClick = { viewModel.saveJob(job.id) },
                                             onRemoveClick = { viewModel.removeRecommendedJob(job.id) }
@@ -153,13 +157,13 @@ fun JobsScreen(
 
                     // Saved jobs Section
                     item {
-                        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 text = "Saved jobs",
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 12.dp)
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
                             )
 
                             if (state.savedJobs.isEmpty()) {
@@ -167,15 +171,17 @@ fun JobsScreen(
                                     text = "Henüz kaydedilmiş iş yok",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Color.White.copy(alpha = 0.5f),
-                                    modifier = Modifier.padding(vertical = 8.dp)
+                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
                                 )
                             } else {
                                 Column(
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     state.savedJobs.forEach { job ->
+                                        val user = state.users[job.userId]
                                         JobCard(
                                             job = job,
+                                            user = user,
                                             isSaved = true,
                                             onSaveClick = { viewModel.unsaveJob(job.id) },
                                             onRemoveClick = { viewModel.unsaveJob(job.id) }
@@ -194,6 +200,7 @@ fun JobsScreen(
 @Composable
 fun JobCard(
     job: Job,
+    user: User? = null,
     isSaved: Boolean,
     onSaveClick: () -> Unit,
     onRemoveClick: () -> Unit
@@ -201,7 +208,7 @@ fun JobCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2A2A2A)
+            containerColor = Color(0xFF212121)
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -229,13 +236,23 @@ fun JobCard(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    // Company initials or icon - larger text
-                    Text(
-                        text = job.company.take(2).uppercase(),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = BrandYellow,
-                        fontWeight = FontWeight.Bold
-                    )
+                    // Company initials or icon - larger text (eğer company varsa)
+                    if (job.company.isNotBlank()) {
+                        Text(
+                            text = job.company.take(2).uppercase(),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = BrandYellow,
+                            fontWeight = FontWeight.Bold
+                        )
+                    } else {
+                        // Work post için basit icon
+                        Icon(
+                            imageVector = Icons.Default.Work,
+                            contentDescription = "Work",
+                            tint = BrandYellow,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
             }
 
@@ -247,14 +264,27 @@ fun JobCard(
             ) {
                 // Job Title - Company
                 Text(
-                    text = "${job.title} – ${job.company}",
+                    text = if (job.company.isNotBlank()) "${job.title} – ${job.company}" else job.title,
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 4.dp),
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+
+                // User name (paylaşan kullanıcı)
+                if (user != null) {
+                    val fullName = listOfNotNull(user.name, user.surname).joinToString(" ")
+                    if (fullName.isNotBlank()) {
+                        Text(
+                            text = fullName,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = BrandYellow.copy(alpha = 0.8f),
+                            modifier = Modifier.padding(bottom = 2.dp)
+                        )
+                    }
+                }
 
                 // Location and Work Type
                 Row(

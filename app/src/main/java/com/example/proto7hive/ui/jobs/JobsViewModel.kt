@@ -5,7 +5,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.proto7hive.data.JobRepository
 import com.example.proto7hive.data.FirestoreJobRepository
+import com.example.proto7hive.data.UserRepository
+import com.example.proto7hive.data.FirestoreUserRepository
 import com.example.proto7hive.model.Job
+import com.example.proto7hive.model.User
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,11 +18,13 @@ data class JobsUiState(
     val isLoading: Boolean = true,
     val recommendedJobs: List<Job> = emptyList(),
     val savedJobs: List<Job> = emptyList(),
+    val users: Map<String, User> = emptyMap(), // userId -> User mapping
     val errorMessage: String? = null
 )
 
 class JobsViewModel(
-    private val jobRepository: JobRepository = FirestoreJobRepository()
+    private val jobRepository: JobRepository = FirestoreJobRepository(),
+    private val userRepository: UserRepository = FirestoreUserRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(JobsUiState())
@@ -42,22 +47,40 @@ class JobsViewModel(
                     return@launch
                 }
 
-                // Tüm işleri al (önerilen işler için - şimdilik tüm işler)
-                val allJobs = jobRepository.getJobs()
+                // Tüm işleri al (jobs koleksiyonundan)
+                // Artık work paylaşırken direkt Job oluşturulduğu için sadece jobs koleksiyonundan alıyoruz
+                val allJobsCombined = jobRepository.getJobs()
+                
+                // Tüm job'ların userId'lerini topla
+                val userIds = allJobsCombined.map { it.userId }.distinct().filter { it.isNotBlank() }
+                
+                // Kullanıcı bilgilerini yükle
+                val usersMap = userIds.associateWith { userId ->
+                    try {
+                        userRepository.getUser(userId) ?: User(id = userId, name = "Bilinmeyen Kullanıcı", email = "")
+                    } catch (e: Exception) {
+                        User(id = userId, name = "Bilinmeyen Kullanıcı", email = "")
+                    }
+                }
                 
                 // Kaydedilen iş ID'lerini al
                 val savedJobIds = jobRepository.getSavedJobs(currentUser.uid)
                 
                 // Kaydedilen işleri filtrele
-                val savedJobsList = allJobs.filter { it.id in savedJobIds }
+                val savedJobsList = allJobsCombined.filter { 
+                    it.id in savedJobIds || it.id.replace("post_", "") in savedJobIds 
+                }
                 
                 // Önerilen işler = kaydedilenler hariç tüm işler
-                val recommendedJobsList = allJobs.filter { it.id !in savedJobIds }
+                val recommendedJobsList = allJobsCombined.filter { 
+                    it.id !in savedJobIds && it.id.replace("post_", "") !in savedJobIds
+                }
 
                 _uiState.value = JobsUiState(
                     isLoading = false,
                     recommendedJobs = recommendedJobsList,
-                    savedJobs = savedJobsList
+                    savedJobs = savedJobsList,
+                    users = usersMap
                 )
             } catch (t: Throwable) {
                 _uiState.value = JobsUiState(
@@ -109,12 +132,13 @@ class JobsViewModel(
 }
 
 class JobsViewModelFactory(
-    private val jobRepository: JobRepository = FirestoreJobRepository()
+    private val jobRepository: JobRepository = FirestoreJobRepository(),
+    private val userRepository: UserRepository = FirestoreUserRepository()
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(JobsViewModel::class.java)) {
-            return JobsViewModel(jobRepository) as T
+            return JobsViewModel(jobRepository, userRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

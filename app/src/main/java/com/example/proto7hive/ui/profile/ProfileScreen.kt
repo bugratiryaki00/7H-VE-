@@ -2,6 +2,7 @@ package com.example.proto7hive.ui.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,18 +26,20 @@ import coil.compose.AsyncImage
 import com.example.proto7hive.R
 import com.example.proto7hive.data.AuthRepository
 import com.example.proto7hive.model.Post
-import com.example.proto7hive.model.Project
+import com.example.proto7hive.model.Job
 import com.example.proto7hive.ui.auth.AuthViewModel
 import com.example.proto7hive.ui.auth.AuthViewModelFactory
 import com.example.proto7hive.ui.components.SearchBar
 import com.example.proto7hive.ui.home.PostCard
 import com.example.proto7hive.ui.home.getTimeAgo
+import com.example.proto7hive.ui.jobs.JobCard
 import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 
 @Composable
 fun ProfileRoute(
     onNavigateToOnboarding: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(AuthRepository())),
     profileViewModel: ProfileViewModel = viewModel(
         factory = ProfileViewModelFactory()
@@ -47,6 +50,7 @@ fun ProfileRoute(
         profileState = profileState,
         authViewModel = authViewModel,
         onNavigateToOnboarding = onNavigateToOnboarding,
+        onNavigateToSettings = onNavigateToSettings,
         onRefresh = { profileViewModel.refresh() }
     )
 }
@@ -56,6 +60,7 @@ fun ProfileScreen(
     profileState: ProfileUiState,
     authViewModel: AuthViewModel,
     onNavigateToOnboarding: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     onRefresh: () -> Unit
 ) {
     val authState by authViewModel.uiState.collectAsState()
@@ -77,7 +82,7 @@ fun ProfileScreen(
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(32.dp),
+                modifier = Modifier.height(72.dp),
                 contentScale = ContentScale.Fit
             )
         }
@@ -120,9 +125,10 @@ fun ProfileScreen(
                     // Profile Header
                     ProfileHeader(
                         user = profileState.user,
-                        postsCount = profileState.posts.size,
-                        worksCount = profileState.projects.size,
-                        connectionsCount = profileState.connectionsCount
+                        postsCount = profileState.posts.count { it.postType == "post" },
+                        worksCount = profileState.posts.count { it.postType == "work" } + profileState.jobs.size,
+                        connectionsCount = profileState.connectionsCount,
+                        onEditProfile = onNavigateToSettings
                     )
 
                     // Tabs (POSTS / WORKS)
@@ -135,17 +141,34 @@ fun ProfileScreen(
                     Box(modifier = Modifier.weight(1f)) {
                         when (selectedTab) {
                             0 -> {
-                                // POSTS Tab
-                                if (profileState.posts.isEmpty()) {
-                                    Box(
+                                // POSTS Tab - Sadece postType="post" olanları göster
+                                val postsOnly = profileState.posts.filter { it.postType == "post" }
+                                if (postsOnly.isEmpty()) {
+                                    Column(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .padding(32.dp),
-                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = "Henüz post paylaşılmamış",
-                                            color = Color.White.copy(alpha = 0.5f)
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .fillMaxWidth()
+                                                .padding(32.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "Henüz post paylaşılmamış",
+                                                color = Color.White.copy(alpha = 0.5f)
+                                            )
+                                        }
+                                        
+                                        // Profile Options when no posts
+                                        ProfileOptions(
+                                            onNavigateToOnboarding = onNavigateToOnboarding,
+                                            onNavigateToSettings = onNavigateToSettings,
+                                            onLogout = {
+                                                authViewModel.signOut()
+                                                onNavigateToOnboarding()
+                                            }
                                         )
                                     }
                                 } else {
@@ -153,7 +176,7 @@ fun ProfileScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         contentPadding = PaddingValues(bottom = 16.dp)
                                     ) {
-                                        items(profileState.posts) { post ->
+                                        items(postsOnly) { post ->
                                             PostCard(
                                                 post = post,
                                                 user = profileState.user
@@ -175,8 +198,11 @@ fun ProfileScreen(
                                 }
                             }
                             1 -> {
-                                // WORKS Tab
-                                if (profileState.projects.isEmpty()) {
+                                // WORKS Tab - postType="work" olan postları ve jobs'ları göster
+                                val worksOnly = profileState.posts.filter { it.postType == "work" }
+                                val hasWorks = worksOnly.isNotEmpty() || profileState.jobs.isNotEmpty()
+                                
+                                if (!hasWorks) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxSize()
@@ -189,14 +215,15 @@ fun ProfileScreen(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(
-                                                text = "Henüz proje eklenmemiş",
+                                                text = "Henüz work paylaşılmamış",
                                                 color = Color.White.copy(alpha = 0.5f)
                                             )
                                         }
                                         
-                                        // Profile Options when no projects
+                                        // Profile Options when no works
                                         ProfileOptions(
                                             onNavigateToOnboarding = onNavigateToOnboarding,
+                                            onNavigateToSettings = onNavigateToSettings,
                                             onLogout = {
                                                 authViewModel.signOut()
                                                 onNavigateToOnboarding()
@@ -208,11 +235,26 @@ fun ProfileScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         contentPadding = PaddingValues(bottom = 16.dp)
                                     ) {
-                                        items(profileState.projects) { project ->
-                                            ProjectCard(project = project)
+                                        // Work type postları göster
+                                        items(worksOnly) { post ->
+                                            PostCard(
+                                                post = post,
+                                                user = profileState.user
+                                            )
                                         }
                                         
-                                        // Profile Options at the end of projects
+                                        // Jobs'ları göster
+                                        items(profileState.jobs) { job ->
+                                            JobCard(
+                                                job = job,
+                                                user = profileState.user,
+                                                isSaved = false,
+                                                onSaveClick = { /* Profile'da save/unsave işlemi yapılmaz */ },
+                                                onRemoveClick = { /* Profile'da remove işlemi yapılmaz */ }
+                                            )
+                                        }
+                                        
+                                        // Profile Options at the end
                                         item {
                                             Spacer(modifier = Modifier.height(24.dp))
                                             ProfileOptions(
@@ -239,108 +281,186 @@ fun ProfileHeader(
     user: com.example.proto7hive.model.User?,
     postsCount: Int,
     worksCount: Int,
-    connectionsCount: Int
+    connectionsCount: Int,
+    onEditProfile: () -> Unit = {}
 ) {
-    Column(
+    Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF212121)
+        ),
+        shape = RoundedCornerShape(
+            topStart = 12.dp,
+            topEnd = 12.dp,
+            bottomStart = 0.dp,
+            bottomEnd = 0.dp
+        )
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
-            // Profile Picture
+            // Profile Picture with yellow border
             Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(BrandYellow.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
-                if (user?.profileImageUrl != null && user.profileImageUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = user.profileImageUrl,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Profile",
-                        tint = BrandYellow,
-                        modifier = Modifier.size(48.dp)
-                    )
+                // Outer circle with border (80dp)
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .border(
+                            width = 2.dp,
+                            color = BrandYellow,
+                            shape = CircleShape
+                        )
+                )
+                
+                // Inner profile image (76dp to account for border)
+                Box(
+                    modifier = Modifier
+                        .size(76.dp)
+                        .clip(CircleShape)
+                        .background(BrandBackgroundDark),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (user?.profileImageUrl != null && user.profileImageUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = user.profileImageUrl,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile",
+                            tint = BrandYellow,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Name and Info
+            // Name and Statistics on the right
             Column(
                 modifier = Modifier.weight(1f)
             ) {
+                // Name
                 Text(
-                    text = user?.name ?: "Kullanıcı",
+                    text = if (user != null) {
+                        listOfNotNull(user.name, user.surname).joinToString(" ")
+                    } else {
+                        "Kullanıcı"
+                    },
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
 
-                // University/Department
-                if (user?.department != null && user.department.isNotBlank()) {
-                    Text(
-                        text = user.department,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Statistics
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    StatisticItem(count = postsCount.toString(), label = "Posts")
+                    StatisticItem(count = worksCount.toString(), label = "Works")
+                    StatisticItem(count = "$connectionsCount+", label = "Bees")
                 }
             }
 
-            // JOB Button (green)
-            Button(
-                onClick = { /* TODO: Navigate to job applications */ },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4CAF50) // Green
-                ),
-                shape = RoundedCornerShape(8.dp)
+            // JOB Button (green) and Edit Profile Button
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "JOB",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Button(
+                    onClick = { /* TODO: Navigate to job applications */ },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4CAF50) // Green
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "JOB",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+                
+                // Edit Profile Button (pencil icon)
+                IconButton(
+                    onClick = onEditProfile,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Profili Düzenle",
+                        tint = BrandYellow,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Statistics
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            StatisticItem(label = "$postsCount Posts")
-            StatisticItem(label = "$worksCount Works")
-            StatisticItem(label = "$connectionsCount+ Bees")
+        // Bio and Department below profile picture
+        Column {
+            // Bio
+            if (user?.bio != null && user.bio.isNotBlank()) {
+                Text(
+                    text = user.bio,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+
+            // University/Department
+            if (user?.department != null && user.department.isNotBlank()) {
+                Text(
+                    text = user.department,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.7f)
+                )
+            }
+        }
         }
     }
 }
 
 @Composable
-fun StatisticItem(label: String) {
-    Text(
-        text = label,
-        style = MaterialTheme.typography.bodyMedium,
-        color = Color.White,
-        fontWeight = FontWeight.Medium
-    )
+fun StatisticItem(count: String, label: String) {
+    Column(
+        horizontalAlignment = Alignment.Start
+    ) {
+        Text(
+            text = count,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.White.copy(alpha = 0.7f)
+        )
+    }
 }
 
 @Composable
@@ -348,112 +468,70 @@ fun ProfileTabs(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        // POSTS Tab
-        Tab(
-            selected = selectedTab == 0,
-            onClick = { onTabSelected(0) },
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = "POSTS",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
-                color = if (selectedTab == 0) BrandYellow else Color.White.copy(alpha = 0.7f),
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-        }
-
-        // WORKS Tab
-        Tab(
-            selected = selectedTab == 1,
-            onClick = { onTabSelected(1) },
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = "WORKS",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
-                color = if (selectedTab == 1) BrandYellow else Color.White.copy(alpha = 0.7f),
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun ProjectCard(project: Project) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(vertical = 8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2A2A2A)
+            containerColor = Color(0xFF212121)
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Project Image (if exists)
-            project.imageUrl?.let { imageUrl ->
-                if (imageUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .padding(bottom = 12.dp),
-                        contentScale = ContentScale.Crop
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // POSTS Tab
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onTabSelected(0) }
+                        .padding(vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "POSTS",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selectedTab == 0) BrandYellow else Color.White.copy(alpha = 0.7f)
+                    )
+                }
+
+                // WORKS Tab
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onTabSelected(1) }
+                        .padding(vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "WORKS",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selectedTab == 1) BrandYellow else Color.White.copy(alpha = 0.7f)
                     )
                 }
             }
-
-            // Project Title
-            Text(
-                text = project.title,
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            // Project Description
-            if (project.description.isNotBlank()) {
-                Text(
-                    text = project.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.8f),
-                    modifier = Modifier.padding(bottom = 8.dp)
+            
+            // Combined underline - left yellow when POSTS selected, right yellow when WORKS selected
+            Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Left half (POSTS)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(2.dp)
+                        .background(if (selectedTab == 0) BrandYellow else Color.White.copy(alpha = 0.3f))
                 )
-            }
-
-            // Tags
-            if (project.tags.isNotEmpty()) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(top = 4.dp)
-                ) {
-                    project.tags.take(3).forEach { tag ->
-                        Surface(
-                            color = BrandYellow.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(
-                                text = tag,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = BrandYellow,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                }
+                // Right half (WORKS)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(2.dp)
+                        .background(if (selectedTab == 1) BrandYellow else Color.White.copy(alpha = 0.3f))
+                )
             }
         }
     }
@@ -462,6 +540,7 @@ fun ProjectCard(project: Project) {
 @Composable
 fun ProfileOptions(
     onNavigateToOnboarding: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     Column(
@@ -479,34 +558,7 @@ fun ProfileOptions(
                     icon = Icons.Default.Edit,
                     title = "Profili Düzenle",
                     subtitle = "Kişisel bilgilerinizi güncelleyin",
-                    onClick = { /* TODO: Navigate to edit profile */ }
-                )
-
-                Divider(color = Color.White.copy(alpha = 0.1f))
-
-                ProfileOptionItem(
-                    icon = Icons.Default.WorkspacePremium,
-                    title = "Rozetlerim",
-                    subtitle = "Kazandığınız rozetleri görün",
-                    onClick = { /* TODO: Navigate to badges */ }
-                )
-
-                Divider(color = Color.White.copy(alpha = 0.1f))
-
-                ProfileOptionItem(
-                    icon = Icons.Default.Settings,
-                    title = "Ayarlar",
-                    subtitle = "Uygulama ayarları",
-                    onClick = { /* TODO: Navigate to settings */ }
-                )
-
-                Divider(color = Color.White.copy(alpha = 0.1f))
-
-                ProfileOptionItem(
-                    icon = Icons.Default.Help,
-                    title = "Yardım",
-                    subtitle = "Sık sorulan sorular",
-                    onClick = { /* TODO: Navigate to help */ }
+                    onClick = onNavigateToSettings
                 )
             }
         }
@@ -539,7 +591,7 @@ fun ProfileOptions(
 }
 
 @Composable
-private fun ProfileOptionItem(
+fun ProfileOptionItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String,

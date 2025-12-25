@@ -64,16 +64,11 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
-    
-    // Projects koleksiyonu
-    match /projects/{projectId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
-    }
   }
 }
 ```
+
+**Not:** Güncel ve detaylı kurallar için `docs/FIRESTORE_SECURITY_RULES.md` dosyasına bakın.
 
 **Test İçin Basit Kurallar (Geçici - TAMAMINI kopyalayın):**
 

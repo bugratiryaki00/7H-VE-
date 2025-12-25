@@ -28,19 +28,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.size
 import com.example.proto7hive.R
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.proto7hive.ui.home.HomeFeedRoute
 import com.example.proto7hive.ui.connections.ConnectionsRoute
 import com.example.proto7hive.ui.createpost.CreatePostRoute
 import com.example.proto7hive.ui.jobs.JobsRoute
 import com.example.proto7hive.ui.profile.ProfileRoute
+import com.example.proto7hive.ui.profile.ProfileSettingsRoute
 import com.example.proto7hive.ui.auth.WelcomeScreen
 import com.example.proto7hive.ui.auth.LoginScreen
 import com.example.proto7hive.ui.auth.SignUpFlowScreen
 import com.example.proto7hive.ui.auth.ForgotPasswordScreen
+import com.example.proto7hive.ui.comments.CommentsRoute
 
 object Routes {
     const val WELCOME = "welcome"
@@ -52,15 +56,20 @@ object Routes {
     const val CREATE_POST = "create_post" // Announcements yerine
     const val JOBS = "jobs" // Matches yerine
     const val PROFILE = "profile"
+    const val PROFILE_SETTINGS = "profile_settings"
     
     // Detay sayfaları (ileride gerekebilir)
     const val PROJECT_DETAIL = "project/{projectId}"
     const val POST_DETAIL = "post/{postId}"
     const val JOB_DETAIL = "job/{jobId}"
+    const val COMMENTS_POST = "comments/post/{postId}"
+    const val COMMENTS_JOB = "comments/job/{jobId}"
 
     fun projectDetail(projectId: String) = "project/$projectId"
     fun postDetail(postId: String) = "post/$postId"
     fun jobDetail(jobId: String) = "job/$jobId"
+    fun commentsPost(postId: String) = "comments/post/$postId"
+    fun commentsJob(jobId: String) = "comments/job/$jobId"
 }
 
 @Composable
@@ -72,7 +81,15 @@ fun RootScaffold() {
 
     Scaffold(
         bottomBar = { 
-            if (currentRoute !in listOf(Routes.WELCOME, Routes.LOGIN, Routes.SIGN_UP, Routes.FORGOT_PASSWORD)) {
+            if (currentRoute !in listOf(
+                Routes.WELCOME, 
+                Routes.LOGIN, 
+                Routes.SIGN_UP, 
+                Routes.FORGOT_PASSWORD,
+                Routes.COMMENTS_POST,
+                Routes.COMMENTS_JOB,
+                Routes.PROFILE_SETTINGS
+            )) {
                 BottomBar(navController) 
             }
         }
@@ -121,10 +138,13 @@ fun RootScaffold() {
                 )
             }
             composable(Routes.HOME) { 
-                HomeFeedRoute(key = homeRefreshKey)
+                HomeFeedRoute(
+                    key = homeRefreshKey,
+                    navController = navController
+                )
             }
             composable(Routes.CONNECTIONS) { 
-                ConnectionsRoute()
+                ConnectionsRoute(navController = navController)
             }
             composable(Routes.CREATE_POST) { 
                 CreatePostRoute(
@@ -147,8 +167,51 @@ fun RootScaffold() {
                         navController.navigate(Routes.WELCOME) { 
                             popUpTo(0) { inclusive = true } 
                         } 
+                    },
+                    onNavigateToSettings = {
+                        navController.navigate(Routes.PROFILE_SETTINGS)
                     }
                 ) 
+            }
+            composable(Routes.PROFILE_SETTINGS) {
+                ProfileSettingsRoute(
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onProfileUpdated = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable(
+                route = Routes.COMMENTS_POST,
+                arguments = listOf(
+                    navArgument("postId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val postId = backStackEntry.arguments?.getString("postId")
+                CommentsRoute(
+                    postId = postId,
+                    jobId = null,
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable(
+                route = Routes.COMMENTS_JOB,
+                arguments = listOf(
+                    navArgument("jobId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val jobId = backStackEntry.arguments?.getString("jobId")
+                CommentsRoute(
+                    postId = null,
+                    jobId = jobId,
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }

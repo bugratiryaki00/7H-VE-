@@ -66,3 +66,4 @@ Emülatör'de:
 4. Emülatörü yeniden başlat
 
 
+

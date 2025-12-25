@@ -30,11 +30,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.proto7hive.data.FirestorePostRepository
 import com.example.proto7hive.data.FirestoreConnectionRepository
 import com.example.proto7hive.data.FirestoreUserRepository
 import com.example.proto7hive.ui.components.SearchBar
+import com.example.proto7hive.ui.screens.Routes
 import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 import com.example.proto7hive.R
@@ -44,7 +46,8 @@ import kotlin.math.abs
 
 @Composable
 fun HomeFeedRoute(
-    key: Any? = null // Dışarıdan değişince refresh tetiklenir
+    key: Any? = null, // Dışarıdan değişince refresh tetiklenir
+    navController: NavController? = null
 ) {
     val viewModel: HomeFeedViewModel = viewModel(
         factory = HomeFeedViewModelFactory(
@@ -59,12 +62,16 @@ fun HomeFeedRoute(
         viewModel.refresh()
     }
     
-    HomeFeedScreen(viewModel = viewModel)
+    HomeFeedScreen(
+        viewModel = viewModel,
+        navController = navController
+    )
 }
 
 @Composable
 fun HomeFeedScreen(
-    viewModel: HomeFeedViewModel
+    viewModel: HomeFeedViewModel,
+    navController: NavController? = null
 ) {
     val state by viewModel.uiState.collectAsState()
     
@@ -84,7 +91,7 @@ fun HomeFeedScreen(
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(32.dp),
+                modifier = Modifier.height(72.dp),
                 contentScale = ContentScale.Fit
             )
         }
@@ -143,7 +150,12 @@ fun HomeFeedScreen(
                         val user = state.users[post.userId]
                         PostCard(
                             post = post,
-                            user = user
+                            user = user,
+                            onCommentClick = {
+                                if (navController != null && post.id.isNotEmpty()) {
+                                    navController.navigate(Routes.commentsPost(post.id))
+                                }
+                            }
                         )
                     }
                 }
@@ -155,16 +167,17 @@ fun HomeFeedScreen(
 @Composable
 fun PostCard(
     post: com.example.proto7hive.model.Post,
-    user: com.example.proto7hive.model.User?
+    user: com.example.proto7hive.model.User?,
+    onCommentClick: () -> Unit = {}
 ) {
     var isLiked by remember { mutableStateOf(false) }
     
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2A2A2A)
+            containerColor = Color(0xFF212121)
         ),
-        shape = RoundedCornerShape(0.dp)
+        shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // User Header (Profile Picture + Name + Job + Time)
@@ -206,7 +219,11 @@ fun PostCard(
                 // Name, Job, Time
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = user?.name ?: "Kullanıcı",
+                        text = if (user != null) {
+                            listOfNotNull(user.name, user.surname).joinToString(" ")
+                        } else {
+                            "Kullanıcı"
+                        },
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White,
                         fontWeight = FontWeight.Bold
@@ -293,7 +310,7 @@ fun PostCard(
                 
                 // Comment Button
                 Row(
-                    modifier = Modifier.clickable { /* TODO: Navigate to comments */ },
+                    modifier = Modifier.clickable(onClick = onCommentClick),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
