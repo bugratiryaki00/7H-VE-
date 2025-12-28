@@ -91,11 +91,11 @@ fun CreatePostScreen(
             .fillMaxSize()
             .background(BrandBackgroundDark)
     ) {
-        // Top Bar: X | Logo | Share Button
+        // Top Bar: X | Logo | Share Button - Üstte, minimal padding
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 0.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -111,11 +111,13 @@ fun CreatePostScreen(
                 )
             }
 
-            // Logo (Center)
+            // Logo (Center) - Sağa kaydırmak için offset ekle
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(72.dp),
+                modifier = Modifier
+                    .height(80.dp)
+                    .offset(x = 23.dp),
                 contentScale = ContentScale.Fit
             )
 
@@ -238,20 +240,34 @@ fun CreatePostScreen(
                             .padding(bottom = 80.dp)
                     ) {
                         Spacer(modifier = Modifier.height(12.dp))
-                        // Text Field
-                        TextField(
-                            value = state.text,
-                            onValueChange = { viewModel.updateText(it) },
-                            placeholder = {
-                                Text(
-                                    text = "What do you want to share",
-                                    color = Color.White.copy(alpha = 0.5f)
-                                )
-                            },
+                        
+                        // Image Icon Button launcher
+                        val pickMedia = rememberLauncherForActivityResult(
+                            contract = ActivityResultContracts.PickVisualMedia()
+                        ) { uri: Uri? ->
+                            uri?.let { selectedUri ->
+                                viewModel.setSelectedImage(selectedUri)
+                            }
+                        }
+                        
+                        // Text Field with Image Button on top right
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp)
-                                .heightIn(min = 100.dp),
+                        ) {
+                            TextField(
+                                value = state.text,
+                                onValueChange = { viewModel.updateText(it) },
+                                placeholder = {
+                                    Text(
+                                        text = "What do you want to share",
+                                        color = Color.White.copy(alpha = 0.5f)
+                                    )
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 100.dp),
                                 colors = TextFieldDefaults.colors(
                                     focusedTextColor = Color.White,
                                     unfocusedTextColor = Color.White,
@@ -269,30 +285,8 @@ fun CreatePostScreen(
                                 maxLines = 10,
                                 textStyle = MaterialTheme.typography.bodyLarge
                             )
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        // Image Icon Button - Alt kısımda görsel butonu
-                        val pickMedia = rememberLauncherForActivityResult(
-                            contract = ActivityResultContracts.PickVisualMedia()
-                        ) { uri: Uri? ->
-                            uri?.let { selectedUri ->
-                                viewModel.setSelectedImage(selectedUri)
-                            }
-                        }
-                        
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Fotoğraf Ekle",
-                                color = Color.White.copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            
+                            // Image Icon Button - Sağ üst köşede
                             IconButton(
                                 onClick = {
                                     pickMedia.launch(
@@ -301,16 +295,21 @@ fun CreatePostScreen(
                                         )
                                     )
                                 },
-                                modifier = Modifier.size(48.dp)
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(end = 4.dp, top = 4.dp)
+                                    .size(40.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Image,
                                     contentDescription = "Add Image",
                                     tint = BrandYellow,
-                                    modifier = Modifier.size(28.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                         }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         // Selected Image Preview - Card içinde alt kısımda
                         state.imageUri?.let { imageUri ->
@@ -408,12 +407,12 @@ private fun WorkFormContent(
             Tab(
                 selected = selectedTab == 0,
                 onClick = { selectedTab = 0 },
-                text = { Text("Temel Bilgiler", color = if (selectedTab == 0) BrandYellow else Color.White.copy(alpha = 0.7f)) }
+                text = { Text("Basic Information", color = if (selectedTab == 0) BrandYellow else Color.White.copy(alpha = 0.7f)) }
             )
             Tab(
                 selected = selectedTab == 1,
                 onClick = { selectedTab = 1 },
-                text = { Text("Açıklama & Fotoğraf", color = if (selectedTab == 1) BrandYellow else Color.White.copy(alpha = 0.7f)) }
+                text = { Text("Description & Photo", color = if (selectedTab == 1) BrandYellow else Color.White.copy(alpha = 0.7f)) }
             )
         }
 
@@ -456,7 +455,7 @@ private fun WorkBasicInfoTab(
         OutlinedTextField(
             value = state.workTitle,
             onValueChange = { viewModel.updateWorkTitle(it) },
-            label = { Text("İş Başlığı *", color = Color.White) },
+            label = { Text("Job Title *", color = Color.White) },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = BrandYellow,
@@ -473,7 +472,7 @@ private fun WorkBasicInfoTab(
         OutlinedTextField(
             value = state.workCompany,
             onValueChange = { viewModel.updateWorkCompany(it) },
-            label = { Text("Şirket Adı *", color = Color.White) },
+            label = { Text("Company Name *", color = Color.White) },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = BrandYellow,
@@ -490,8 +489,8 @@ private fun WorkBasicInfoTab(
         OutlinedTextField(
             value = state.workLocation,
             onValueChange = { viewModel.updateWorkLocation(it) },
-            label = { Text("Lokasyon", color = Color.White) },
-            placeholder = { Text("Örn: Istanbul, Remote, Hybrid/Kadıköy", color = Color.White.copy(alpha = 0.5f)) },
+            label = { Text("Location", color = Color.White) },
+            placeholder = { Text("e.g: Istanbul, Remote, Hybrid/Kadıköy", color = Color.White.copy(alpha = 0.5f)) },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = BrandYellow,
@@ -515,8 +514,8 @@ private fun WorkBasicInfoTab(
                 value = state.workType,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Çalışma Tipi *", color = Color.White) },
-                placeholder = { Text("Seçiniz", color = Color.White.copy(alpha = 0.5f)) },
+                label = { Text("Work Type *", color = Color.White) },
+                placeholder = { Text("Select", color = Color.White.copy(alpha = 0.5f)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .menuAnchor(),
@@ -562,7 +561,7 @@ private fun WorkBasicInfoTab(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Gerekli Yetenekler",
+                    text = "Required Skills",
                     style = MaterialTheme.typography.titleSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
@@ -576,7 +575,7 @@ private fun WorkBasicInfoTab(
                     OutlinedTextField(
                         value = newSkill,
                         onValueChange = onNewSkillChange,
-                        label = { Text("Yetenek ekle", color = Color.White) },
+                        label = { Text("Add Skill", color = Color.White) },
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BrandYellow,
@@ -602,7 +601,7 @@ private fun WorkBasicInfoTab(
                             contentColor = Color.Black
                         )
                     ) {
-                        Text("Ekle")
+                        Text("Add")
                     }
                 }
 
@@ -634,7 +633,7 @@ private fun WorkBasicInfoTab(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
-                                            contentDescription = "Kaldır",
+                                            contentDescription = "Remove",
                                             tint = Color.White,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -673,40 +672,41 @@ private fun WorkDescriptionAndImageTab(
                 .verticalScroll(scrollState)
                 .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 80.dp)
         ) {
-            // Description
-            OutlinedTextField(
-                value = state.workDescription,
-                onValueChange = { viewModel.updateWorkDescription(it) },
-                label = { Text("Açıklama", color = Color.White) },
-                placeholder = { Text("İş hakkında detaylı bilgi", color = Color.White.copy(alpha = 0.5f)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 120.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = BrandYellow,
-                    unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedLabelColor = BrandYellow,
-                    unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
-                ),
-                maxLines = 10,
-                textStyle = MaterialTheme.typography.bodyLarge
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Image Upload Section - Post'taki gibi
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Description with Image Button on top right
+            Box(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Şirket/Logo Görseli",
-                    color = Color.White.copy(alpha = 0.7f),
-                    style = MaterialTheme.typography.bodyMedium
+                TextField(
+                    value = state.workDescription,
+                    onValueChange = { viewModel.updateWorkDescription(it) },
+                    placeholder = {
+                        Text(
+                            text = "What do you want to share",
+                            color = Color.White.copy(alpha = 0.5f)
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 120.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = BrandYellow,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        focusedContainerColor = Color(0xFF404040),
+                        unfocusedContainerColor = Color(0xFF404040)
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        keyboardType = KeyboardType.Text
+                    ),
+                    maxLines = 10,
+                    textStyle = MaterialTheme.typography.bodyLarge
                 )
+                
+                // Image Icon Button - Sağ üst köşede
                 IconButton(
                     onClick = {
                         pickMedia.launch(
@@ -715,16 +715,21 @@ private fun WorkDescriptionAndImageTab(
                             )
                         )
                     },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 4.dp, top = 4.dp) // Label olmadığı için padding azaltıldı
+                        .size(40.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Image,
                         contentDescription = "Add Image",
                         tint = BrandYellow,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
+            
+            Spacer(modifier = Modifier.height(12.dp))
             
             // Selected Image Preview
             state.imageUri?.let { imageUri ->

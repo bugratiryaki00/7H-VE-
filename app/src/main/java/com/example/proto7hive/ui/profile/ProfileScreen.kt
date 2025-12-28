@@ -11,8 +11,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,18 +42,63 @@ import com.example.proto7hive.ui.theme.BrandYellow
 fun ProfileRoute(
     onNavigateToOnboarding: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
+    refreshKey: Int = 0, // Key değiştiğinde ViewModel refresh edilir
     authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(AuthRepository())),
     profileViewModel: ProfileViewModel = viewModel(
-        factory = ProfileViewModelFactory()
+        factory = ProfileViewModelFactory() // userId null, current user için
     )
 ) {
     val profileState by profileViewModel.uiState.collectAsState()
+    
+    // Key değiştiğinde (Settings'ten dönüldüğünde) refresh yap
+    LaunchedEffect(refreshKey) {
+        if (refreshKey > 0) {
+            profileViewModel.refresh()
+        }
+    }
+    
     ProfileScreen(
         profileState = profileState,
         authViewModel = authViewModel,
         onNavigateToOnboarding = onNavigateToOnboarding,
         onNavigateToSettings = onNavigateToSettings,
-        onRefresh = { profileViewModel.refresh() }
+        onNavigateToSearch = onNavigateToSearch,
+        onRefresh = { profileViewModel.refresh() },
+        isOwnProfile = true,
+        onAddConnection = null // Kendi profilinde connect butonu yok
+    )
+}
+
+@Composable
+fun UserProfileRoute(
+    userId: String,
+    selectedJobId: String? = null,
+    onNavigateBack: () -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
+    authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(AuthRepository())),
+    profileViewModel: ProfileViewModel = viewModel(
+factory = ProfileViewModelFactory(userId = userId)
+    )
+) {
+    val profileState by profileViewModel.uiState.collectAsState()
+    val authState by authViewModel.uiState.collectAsState()
+    val currentUserId = authState.user?.uid
+    
+    ProfileScreen(
+        profileState = profileState,
+        authViewModel = authViewModel,
+        onNavigateToOnboarding = { },
+        onNavigateToSettings = { }, // Başka kullanıcının profilinde settings yok
+        onNavigateToSearch = onNavigateToSearch,
+        onRefresh = { profileViewModel.refresh() },
+        isOwnProfile = currentUserId == userId,
+        onNavigateBack = onNavigateBack,
+        initialTab = if (selectedJobId != null) 1 else 0, // Works tab if jobId provided
+        selectedJobId = selectedJobId,
+        onAddConnection = { targetUserId ->
+            profileViewModel.addConnection(targetUserId)
+        }
     )
 }
 
@@ -61,52 +108,69 @@ fun ProfileScreen(
     authViewModel: AuthViewModel,
     onNavigateToOnboarding: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
-    onRefresh: () -> Unit
+    onNavigateToSearch: () -> Unit = {},
+    onRefresh: () -> Unit,
+    isOwnProfile: Boolean = true,
+    onNavigateBack: () -> Unit = {},
+    initialTab: Int = 0, // 0 = POSTS, 1 = WORKS
+    selectedJobId: String? = null, // Highlight this job if provided
+    onAddConnection: ((String) -> Unit)? = null // Connect butonu için
 ) {
     val authState by authViewModel.uiState.collectAsState()
-    var selectedTab by remember { mutableStateOf(0) } // 0 = POSTS, 1 = WORKS
+    var selectedTab by remember { mutableStateOf(initialTab) } // 0 = POSTS, 1 = WORKS
+    val isConnected = profileState.isConnected
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BrandBackgroundDark)
     ) {
-        // Header with Logo
+        // Header with Logo and Back Button (if not own profile) - Üstte, minimal padding
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            horizontalArrangement = Arrangement.Center,
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Back Button (only for other users' profiles)
+            if (!isOwnProfile) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Geri",
+                        tint = Color.White
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.width(48.dp)) // Spacer to center logo when no back button
+            }
+            
+            // Logo (centered)
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(72.dp),
+                modifier = Modifier.height(80.dp),
                 contentScale = ContentScale.Fit
             )
+            
+            // Right side spacer for symmetry
+            Spacer(modifier = Modifier.width(48.dp))
         }
 
-        // Search Bar
+        // Search Bar - Logo'nun tam altında, arada boşluk yok
         SearchBar(
-            onSearchClick = { /* TODO: Navigate to search screen */ },
-            onNotificationClick = { /* TODO: Navigate to notifications */ }
+            modifier = Modifier.padding(top = 0.dp, bottom = 0.dp),
+            onSearchClick = onNavigateToSearch,
+            onNotificationClick = { }
         )
 
         // Content Area
         when {
-            profileState.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = BrandYellow)
-                }
-            }
             profileState.errorMessage != null -> {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -121,14 +185,22 @@ fun ProfileScreen(
                 }
             }
             else -> {
-                Column(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier.weight(1f)) {
                     // Profile Header
+                    val onEditProfileClick: () -> Unit = if (isOwnProfile) {
+                        onNavigateToSettings
+                    } else {
+                        {}
+                    }
                     ProfileHeader(
                         user = profileState.user,
                         postsCount = profileState.posts.count { it.postType == "post" },
                         worksCount = profileState.posts.count { it.postType == "work" } + profileState.jobs.size,
                         connectionsCount = profileState.connectionsCount,
-                        onEditProfile = onNavigateToSettings
+                        onEditProfile = onEditProfileClick,
+                        isOwnProfile = isOwnProfile,
+                        isConnected = isConnected,
+                        onAddConnection = onAddConnection
                     )
 
                     // Tabs (POSTS / WORKS)
@@ -161,20 +233,11 @@ fun ProfileScreen(
                                             )
                                         }
                                         
-                                        // Profile Options when no posts
-                                        ProfileOptions(
-                                            onNavigateToOnboarding = onNavigateToOnboarding,
-                                            onNavigateToSettings = onNavigateToSettings,
-                                            onLogout = {
-                                                authViewModel.signOut()
-                                                onNavigateToOnboarding()
-                                            }
-                                        )
                                     }
                                 } else {
                                     LazyColumn(
                                         modifier = Modifier.fillMaxSize(),
-                                        contentPadding = PaddingValues(bottom = 16.dp)
+                                        contentPadding = PaddingValues(bottom = 60.dp)
                                     ) {
                                         items(postsOnly) { post ->
                                             PostCard(
@@ -183,17 +246,6 @@ fun ProfileScreen(
                                             )
                                         }
                                         
-                                        // Profile Options at the end of posts
-                                        item {
-                                            Spacer(modifier = Modifier.height(24.dp))
-                                            ProfileOptions(
-                                                onNavigateToOnboarding = onNavigateToOnboarding,
-                                                onLogout = {
-                                                    authViewModel.signOut()
-                                                    onNavigateToOnboarding()
-                                                }
-                                            )
-                                        }
                                     }
                                 }
                             }
@@ -220,20 +272,11 @@ fun ProfileScreen(
                                             )
                                         }
                                         
-                                        // Profile Options when no works
-                                        ProfileOptions(
-                                            onNavigateToOnboarding = onNavigateToOnboarding,
-                                            onNavigateToSettings = onNavigateToSettings,
-                                            onLogout = {
-                                                authViewModel.signOut()
-                                                onNavigateToOnboarding()
-                                            }
-                                        )
                                     }
                                 } else {
                                     LazyColumn(
                                         modifier = Modifier.fillMaxSize(),
-                                        contentPadding = PaddingValues(bottom = 16.dp)
+                                        contentPadding = PaddingValues(bottom = 60.dp)
                                     ) {
                                         // Work type postları göster
                                         items(worksOnly) { post ->
@@ -245,26 +288,17 @@ fun ProfileScreen(
                                         
                                         // Jobs'ları göster
                                         items(profileState.jobs) { job ->
+                                            val isHighlighted = selectedJobId == job.id
                                             JobCard(
                                                 job = job,
                                                 user = profileState.user,
                                                 isSaved = false,
                                                 onSaveClick = { /* Profile'da save/unsave işlemi yapılmaz */ },
-                                                onRemoveClick = { /* Profile'da remove işlemi yapılmaz */ }
+                                                onRemoveClick = { /* Profile'da remove işlemi yapılmaz */ },
+                                                isHighlighted = isHighlighted
                                             )
                                         }
                                         
-                                        // Profile Options at the end
-                                        item {
-                                            Spacer(modifier = Modifier.height(24.dp))
-                                            ProfileOptions(
-                                                onNavigateToOnboarding = onNavigateToOnboarding,
-                                                onLogout = {
-                                                    authViewModel.signOut()
-                                                    onNavigateToOnboarding()
-                                                }
-                                            )
-                                        }
                                     }
                                 }
                             }
@@ -282,7 +316,10 @@ fun ProfileHeader(
     postsCount: Int,
     worksCount: Int,
     connectionsCount: Int,
-    onEditProfile: () -> Unit = {}
+    onEditProfile: () -> Unit = {},
+    isOwnProfile: Boolean = true,
+    isConnected: Boolean = false,
+    onAddConnection: ((String) -> Unit)? = null
 ) {
     Card(
         modifier = Modifier
@@ -380,39 +417,58 @@ fun ProfileHeader(
                 }
             }
 
-            // JOB Button (green) and Edit Profile Button
+            // User Type Tag and Edit Profile Button
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(
-                    onClick = { /* TODO: Navigate to job applications */ },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4CAF50) // Green
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = "JOB",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                // Tag (sadece JOB, INT, TEAM, HIRING, MENTOR göster) - badges'den al, userType'dan değil
+                val badgeValue = user?.badges?.firstOrNull()
+                val tagValue = badgeValue?.uppercase()?.trim() ?: ""
+                val (tagText, tagColor) = when (tagValue) {
+                    "JOB" -> Pair("JOB", Color(0xFF258A00)) // Yeşil - İş arıyor
+                    "INT" -> Pair("INT", Color(0xFF005888)) // Mavi - Staj arıyor
+                    "TEAM" -> Pair("TEAM", Color(0xFFFFC107)) // Sarı - Proje veya ekip arkadaşı arıyor
+                    "HIRING" -> Pair("HIRING", Color(0xFFB03737)) // Kırmızı - İşe alım yapıyor
+                    "MENTOR" -> Pair("MENTOR", Color(0xFF4B0079)) // Mor - Mentorluk veriyor
+                    else -> Pair(null, null) // Student, Academician, Staff, Graduate gibi değerler gösterilmez
                 }
                 
-                // Edit Profile Button (pencil icon)
-                IconButton(
-                    onClick = onEditProfile,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Profili Düzenle",
-                        tint = BrandYellow,
-                        modifier = Modifier.size(24.dp)
-                    )
+                // Tag göster (badge varsa ve geçerli bir tag ise)
+                if (!tagText.isNullOrBlank() && tagColor != null) {
+                    Button(
+                        onClick = { /* User type tag, no action */ },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = tagColor
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.height(28.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = tagText,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
+                
+                // Edit Profile Button (pencil icon) - sadece kendi profilinde göster
+                if (isOwnProfile) {
+                    IconButton(
+                        onClick = onEditProfile,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Profili Düzenle",
+                            tint = BrandYellow,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
         }
@@ -436,8 +492,42 @@ fun ProfileHeader(
                 Text(
                     text = user.department,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = Color.White.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = if (!isOwnProfile) 8.dp else 0.dp)
                 )
+            }
+            
+            // Connect Button (sadece başka kullanıcının profilinde)
+            if (!isOwnProfile && onAddConnection != null && user?.id != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { onAddConnection(user.id) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isConnected) Color.Transparent else BrandYellow
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier
+                        .height(32.dp)
+                        .widthIn(min = 90.dp)
+                        .then(
+                            if (isConnected) {
+                                Modifier.border(
+                                    width = 1.dp,
+                                    color = Color.White.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(20.dp)
+                                )
+                            } else {
+                                Modifier
+                            }
+                        )
+                ) {
+                    Text(
+                        text = "Connect",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isConnected) Color.White.copy(alpha = 0.7f) else Color.Black
+                    )
+                }
             }
         }
         }
@@ -475,7 +565,12 @@ fun ProfileTabs(
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF212121)
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(
+            topStart = 12.dp,
+            topEnd = 12.dp,
+            bottomStart = 0.dp,
+            bottomEnd = 0.dp
+        )
     ) {
         Column {
             Row(
@@ -537,101 +632,3 @@ fun ProfileTabs(
     }
 }
 
-@Composable
-fun ProfileOptions(
-    onNavigateToOnboarding: () -> Unit,
-    onNavigateToSettings: () -> Unit = {},
-    onLogout: () -> Unit
-) {
-    Column(
-        modifier = Modifier.padding(horizontal = 16.dp)
-    ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF2A2A2A)
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Column {
-                ProfileOptionItem(
-                    icon = Icons.Default.Edit,
-                    title = "Profili Düzenle",
-                    subtitle = "Kişisel bilgilerinizi güncelleyin",
-                    onClick = onNavigateToSettings
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Logout Button
-        Button(
-            onClick = onLogout,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ExitToApp,
-                contentDescription = "Çıkış Yap",
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Çıkış Yap",
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-    }
-}
-
-@Composable
-fun ProfileOptionItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = title,
-            tint = BrandYellow,
-            modifier = Modifier.size(24.dp)
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = Color.White
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.7f)
-            )
-        }
-
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = "Arrow",
-            tint = Color.White.copy(alpha = 0.5f),
-            modifier = Modifier.size(20.dp)
-        )
-    }
-}

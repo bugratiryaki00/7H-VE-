@@ -59,42 +59,37 @@ fun ConnectionsScreen(
             .fillMaxSize()
             .background(BrandBackgroundDark)
     ) {
-        // Header with Logo
+        // Header with Logo - Üstte, minimal padding
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 0.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(72.dp),
+                modifier = Modifier.height(80.dp),
                 contentScale = ContentScale.Fit
             )
         }
 
-        // Search Bar
+        // Search Bar - Logo'nun tam altında, arada boşluk yok
         SearchBar(
-            onSearchClick = { /* TODO: Navigate to search screen */ },
-            onNotificationClick = { /* TODO: Navigate to notifications */ }
+            modifier = Modifier.padding(top = 0.dp, bottom = 0.dp),
+            onSearchClick = {
+                navController?.navigate(com.example.proto7hive.ui.screens.Routes.SEARCH)
+            },
+            onNotificationClick = { }
         )
 
-        // Content Area
+        // Content Area - Kalan tüm alanı kaplar, navbar'ın üstüne kadar
         when {
-            state.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = BrandYellow)
-                }
-            }
             state.errorMessage != null -> {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -110,8 +105,8 @@ fun ConnectionsScreen(
             }
             else -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 0.dp, top = 16.dp, end = 0.dp, bottom = 80.dp),
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 60.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     // Recommendations Section
@@ -139,7 +134,10 @@ fun ConnectionsScreen(
                                 items(state.suggestedConnections) { user ->
                                     RecommendationCard(
                                         user = user,
-                                        onAddClick = { viewModel.addConnection(user.id) }
+                                        onAddClick = { viewModel.addConnection(user.id) },
+                                        onClick = {
+                                            navController?.navigate(Routes.userProfile(user.id))
+                                        }
                                     )
                                 }
                             }
@@ -173,7 +171,7 @@ fun ConnectionsScreen(
                                             user = user,
                                             onRemoveClick = { viewModel.removeConnection(user.id) },
                                             onClick = {
-                                                navController?.navigate(Routes.PROFILE)
+                                                navController?.navigate(Routes.userProfile(user.id))
                                             }
                                         )
                                     }
@@ -190,11 +188,13 @@ fun ConnectionsScreen(
 @Composable
 fun RecommendationCard(
     user: User,
-    onAddClick: () -> Unit
+    onAddClick: () -> Unit,
+    onClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
-            .width(180.dp),
+            .width(180.dp)
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF2A2A2A)
         ),

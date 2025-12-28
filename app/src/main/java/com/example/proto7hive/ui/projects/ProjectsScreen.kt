@@ -1,9 +1,11 @@
 package com.example.proto7hive.ui.projects
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -13,7 +15,6 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -119,7 +120,7 @@ private fun ProjectsList(items: List<Project>, onProjectClick: (String) -> Unit)
     }
 }
 
-@Composable private fun Loading() { Column(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) { CircularProgressIndicator(); Text("Yükleniyor…", modifier = Modifier.padding(top = 12.dp)) } }
+@Composable private fun Loading() { Box(modifier = Modifier.fillMaxSize()) }
 @Composable private fun ErrorText(msg: String) { Column(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text("Hata: $msg", style = MaterialTheme.typography.bodyMedium) } }
 @Composable private fun EmptyState() { Column(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text("Henüz proje yok." ); Text("Yeni bir proje ekleyin.", style = MaterialTheme.typography.bodySmall) } }
 

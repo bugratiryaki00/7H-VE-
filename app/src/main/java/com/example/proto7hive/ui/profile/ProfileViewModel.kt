@@ -25,10 +25,12 @@ data class ProfileUiState(
     val posts: List<Post> = emptyList(),
     val jobs: List<Job> = emptyList(),
     val connectionsCount: Int = 0,
+    val isConnected: Boolean = false, // Current user bu kullanıcıyı takip ediyor mu?
     val errorMessage: String? = null
 )
 
 class ProfileViewModel(
+    private val userId: String? = null, // null ise current user, değilse belirtilen user
     private val userRepository: UserRepository = FirestoreUserRepository(),
     private val postRepository: PostRepository = FirestorePostRepository(),
     private val jobRepository: JobRepository = FirestoreJobRepository(),
@@ -37,6 +39,23 @@ class ProfileViewModel(
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState
+    
+    fun addConnection(targetUserId: String) {
+        viewModelScope.launch {
+            try {
+                val currentUser = FirebaseAuth.getInstance().currentUser
+                if (currentUser != null) {
+                    connectionRepository.addConnection(currentUser.uid, targetUserId)
+                    // Refresh profile to update connections count
+                    loadProfile()
+                }
+            } catch (t: Throwable) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = t.message ?: "Bağlantı eklenirken hata oluştu"
+                )
+            }
+        }
+    }
 
     init {
         loadProfile()
@@ -46,34 +65,55 @@ class ProfileViewModel(
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
         viewModelScope.launch {
             try {
-                val currentUser = FirebaseAuth.getInstance().currentUser
-                if (currentUser == null) {
-                    _uiState.value = ProfileUiState(
-                        isLoading = false,
-                        errorMessage = "Giriş yapmamış kullanıcı"
-                    )
-                    return@launch
+                val targetUserId = userId ?: run {
+                    val currentUser = FirebaseAuth.getInstance().currentUser
+                    if (currentUser == null) {
+                        _uiState.value = ProfileUiState(
+                            isLoading = false,
+                            errorMessage = "Giriş yapmamış kullanıcı"
+                        )
+                        return@launch
+                    }
+                    currentUser.uid
                 }
 
                 // Kullanıcı bilgilerini çek
-                val user = userRepository.getUser(currentUser.uid)
+                val user = userRepository.getUser(targetUserId)
+                
+                if (user == null) {
+                    _uiState.value = ProfileUiState(
+                        isLoading = false,
+                        errorMessage = "Kullanıcı bulunamadı"
+                    )
+                    return@launch
+                }
                 
                 // Post'ları çek
-                val posts = postRepository.getPostsByUserId(currentUser.uid)
+                val posts = postRepository.getPostsByUserId(targetUserId)
                 
                 // Jobs'ları çek
-                val jobs = jobRepository.getJobsByUserId(currentUser.uid)
+                val jobs = jobRepository.getJobsByUserId(targetUserId)
                 
                 // Bağlantı sayısı
-                val connections = connectionRepository.getConnections(currentUser.uid)
+                val connections = connectionRepository.getConnections(targetUserId)
                 val connectionsCount = connections.size
+                
+                // Current user bu kullanıcıyı takip ediyor mu?
+                val currentUser = FirebaseAuth.getInstance().currentUser
+                val isConnected = if (currentUser != null && userId != null && currentUser.uid != targetUserId) {
+                    val currentUserConnections = connectionRepository.getConnections(currentUser.uid)
+                    targetUserId in currentUserConnections
+                } else {
+                    false
+                }
 
                 _uiState.value = ProfileUiState(
                     isLoading = false,
                     user = user,
                     posts = posts,
                     jobs = jobs,
-                    connectionsCount = connectionsCount
+                    connectionsCount = connectionsCount,
+                    isConnected = isConnected
                 )
             } catch (t: Throwable) {
                 _uiState.value = ProfileUiState(
@@ -90,6 +130,7 @@ class ProfileViewModel(
 }
 
 class ProfileViewModelFactory(
+    private val userId: String? = null,
     private val userRepository: UserRepository = FirestoreUserRepository(),
     private val postRepository: PostRepository = FirestorePostRepository(),
     private val jobRepository: JobRepository = FirestoreJobRepository(),
@@ -98,7 +139,7 @@ class ProfileViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
-            return ProfileViewModel(userRepository, postRepository, jobRepository, connectionRepository) as T
+            return ProfileViewModel(userId, userRepository, postRepository, jobRepository, connectionRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

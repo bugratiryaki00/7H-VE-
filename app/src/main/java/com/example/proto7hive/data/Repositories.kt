@@ -33,6 +33,7 @@ interface PostRepository {
     suspend fun getPostsByUserIds(userIds: List<String>): List<Post> // Bağlantıların postları için
     suspend fun getPostsByUserId(userId: String): List<Post> // Kullanıcının kendi postları için
     suspend fun createPost(post: Post): String // Yeni post oluştur (döner: postId)
+    suspend fun searchPosts(query: String): List<Post> // İçerik metnine göre arama
 }
 
 interface UserRepository {
@@ -59,6 +60,7 @@ interface JobRepository {
     suspend fun getSavedJobs(userId: String): List<String> // Kaydedilen iş ID'leri (users/{userId}/savedJobs subcollection)
     suspend fun saveJob(userId: String, jobId: String): Unit // İş kaydet
     suspend fun unsaveJob(userId: String, jobId: String): Unit // İş kaydını kaldır
+    suspend fun searchJobs(query: String): List<Job> // Başlık, şirket veya açıklamaya göre arama
 }
 
 interface CommentRepository {

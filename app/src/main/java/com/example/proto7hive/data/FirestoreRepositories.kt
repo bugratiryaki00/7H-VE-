@@ -116,6 +116,16 @@ class FirestorePostRepository(
         docRef.set(postWithId).await()
         return docRef.id
     }
+
+    override suspend fun searchPosts(query: String): List<Post> {
+        val lowerQuery = query.lowercase()
+        val snap = db.collection("posts").get().await()
+        return snap.documents.mapNotNull { doc ->
+            doc.toObject(Post::class.java)?.copy(id = doc.id)
+        }.filter { post ->
+            post.text.lowercase().contains(lowerQuery)
+        }.sortedByDescending { it.timestamp }
+    }
 }
 
 class FirestoreUserRepository(
@@ -159,7 +169,10 @@ class FirestoreUserRepository(
             doc.toObject(User::class.java)?.copy(id = doc.id)
         }.filter { user ->
             user.name.lowercase().contains(lowerQuery) || 
-            user.email.lowercase().contains(lowerQuery)
+            user.surname.lowercase().contains(lowerQuery) ||
+            (user.name.lowercase() + " " + user.surname.lowercase()).contains(lowerQuery) ||
+            user.email.lowercase().contains(lowerQuery) ||
+            (user.department?.lowercase()?.contains(lowerQuery) == true)
         }
     }
 }
@@ -240,6 +253,19 @@ class FirestoreJobRepository(
     override suspend fun unsaveJob(userId: String, jobId: String) {
         db.collection("users").document(userId)
             .collection("savedJobs").document(jobId).delete().await()
+    }
+
+    override suspend fun searchJobs(query: String): List<Job> {
+        val lowerQuery = query.lowercase()
+        val snap = db.collection("jobs").get().await()
+        return snap.documents.mapNotNull { doc ->
+            doc.toObject(Job::class.java)?.copy(id = doc.id)
+        }.filter { job ->
+            job.title.lowercase().contains(lowerQuery) ||
+            job.company.lowercase().contains(lowerQuery) ||
+            job.description.lowercase().contains(lowerQuery) ||
+            job.location.lowercase().contains(lowerQuery)
+        }
     }
 }
 

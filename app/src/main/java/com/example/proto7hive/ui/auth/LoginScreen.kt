@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHost
@@ -43,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proto7hive.R
 import com.example.proto7hive.data.AuthRepository
+import com.example.proto7hive.ui.components.CustomLoadingIndicator
 import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandText
 import com.example.proto7hive.ui.theme.BrandYellow
@@ -82,19 +82,23 @@ fun LoginScreen(
         }
     }
     
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BrandBackgroundDark),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
+    if (state.isLoading) {
+        // Loading durumunda sadece loading indicator göster - tam ekran
+        CustomLoadingIndicator()
+    } else {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxSize()
+                .background(BrandBackgroundDark),
+            contentAlignment = Alignment.Center
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
             // Email Input
             OutlinedTextField(
                 value = email,
@@ -183,19 +187,12 @@ fun LoginScreen(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = BrandBackgroundDark
-                    )
-                } else {
-                    Text(
-                        text = "Submit",
-                        color = BrandBackgroundDark,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Text(
+                    text = "Submit",
+                    color = BrandBackgroundDark,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
             
             Spacer(modifier = Modifier.height(60.dp))
@@ -206,12 +203,13 @@ fun LoginScreen(
                 contentDescription = "7HIVE Logo",
                 modifier = Modifier.size(120.dp)
             )
+            }
+            
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
         }
-        
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
     }
 }
 

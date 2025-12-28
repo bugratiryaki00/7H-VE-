@@ -2,6 +2,7 @@ package com.example.proto7hive.ui.jobs
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,25 +31,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.proto7hive.R
 import com.example.proto7hive.model.Job
 import com.example.proto7hive.model.User
 import com.example.proto7hive.ui.components.SearchBar
+import com.example.proto7hive.ui.screens.Routes
 import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 
 @Composable
-fun JobsRoute() {
+fun JobsRoute(
+    navController: NavController? = null
+) {
     val viewModel: JobsViewModel = viewModel(
         factory = JobsViewModelFactory()
     )
-    JobsScreen(viewModel = viewModel)
+    JobsScreen(
+        viewModel = viewModel,
+        navController = navController
+    )
 }
 
 @Composable
 fun JobsScreen(
-    viewModel: JobsViewModel
+    viewModel: JobsViewModel,
+    navController: NavController? = null
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -57,42 +66,37 @@ fun JobsScreen(
             .fillMaxSize()
             .background(BrandBackgroundDark)
     ) {
-        // Header with Logo
+        // Header with Logo - Üstte, minimal padding
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 0.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(72.dp),
+                modifier = Modifier.height(80.dp),
                 contentScale = ContentScale.Fit
             )
         }
 
-        // Search Bar
+        // Search Bar - Logo'nun tam altında, arada boşluk yok
         SearchBar(
-            onSearchClick = { /* TODO: Navigate to search screen */ },
-            onNotificationClick = { /* TODO: Navigate to notifications */ }
+            modifier = Modifier.padding(top = 0.dp, bottom = 0.dp),
+            onSearchClick = {
+                navController?.navigate(com.example.proto7hive.ui.screens.Routes.SEARCH)
+            },
+            onNotificationClick = { }
         )
 
-        // Content Area
+        // Content Area - Kalan tüm alanı kaplar, navbar'ın üstüne kadar
         when {
-            state.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = BrandYellow)
-                }
-            }
             state.errorMessage != null -> {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -108,8 +112,8 @@ fun JobsScreen(
             }
             else -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 0.dp, top = 16.dp, end = 0.dp, bottom = 80.dp),
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 60.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     // Job interests for you Section
@@ -147,7 +151,12 @@ fun JobsScreen(
                                             user = user,
                                             isSaved = false,
                                             onSaveClick = { viewModel.saveJob(job.id) },
-                                            onRemoveClick = { viewModel.removeRecommendedJob(job.id) }
+                                            onRemoveClick = { viewModel.removeRecommendedJob(job.id) },
+                                            onClick = {
+                                                if (navController != null && job.userId.isNotEmpty() && job.id.isNotEmpty()) {
+                                                    navController.navigate(Routes.userProfileWithJob(job.userId, job.id))
+                                                }
+                                            }
                                         )
                                     }
                                 }
@@ -184,7 +193,12 @@ fun JobsScreen(
                                             user = user,
                                             isSaved = true,
                                             onSaveClick = { viewModel.unsaveJob(job.id) },
-                                            onRemoveClick = { viewModel.unsaveJob(job.id) }
+                                            onRemoveClick = { viewModel.unsaveJob(job.id) },
+                                            onClick = {
+                                                if (navController != null && job.userId.isNotEmpty() && job.id.isNotEmpty()) {
+                                                    navController.navigate(Routes.userProfileWithJob(job.userId, job.id))
+                                                }
+                                            }
                                         )
                                     }
                                 }
@@ -203,10 +217,21 @@ fun JobCard(
     user: User? = null,
     isSaved: Boolean,
     onSaveClick: () -> Unit,
-    onRemoveClick: () -> Unit
+    onRemoveClick: () -> Unit,
+    onClick: () -> Unit = {},
+    isHighlighted: Boolean = false
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .then(
+                if (isHighlighted) {
+                    Modifier.border(width = 2.dp, color = BrandYellow, shape = RoundedCornerShape(12.dp))
+                } else {
+                    Modifier
+                }
+            ),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF212121)
         ),

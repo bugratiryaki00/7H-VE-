@@ -59,7 +59,7 @@ data class Announcement(
     val imageUrl: String? = null
 )
 
-@Serializable
+// @Serializable removed - Firestore uses Java serialization
 data class Post(
     val id: String = "",
     val userId: String = "",

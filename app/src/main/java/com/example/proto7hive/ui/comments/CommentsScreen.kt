@@ -85,14 +85,6 @@ fun CommentsScreen(
             // Comments List
             Box(modifier = Modifier.weight(1f)) {
                 when {
-                    state.isLoading -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = BrandYellow)
-                        }
-                    }
                     state.comments.isEmpty() -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),

@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
 import com.example.proto7hive.ui.theme.BrandYellow
 
 @Composable
@@ -29,46 +30,58 @@ fun SearchBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(vertical = 0.dp),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Search Bar
-        OutlinedTextField(
-            value = "",
-            onValueChange = {},
-            placeholder = { Text(placeholder) },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = BrandYellow
-                )
-            },
+        // Search Bar (centered with max width) - Clickable Box wrapper
+        Box(
             modifier = Modifier
-                .weight(1f)
-                .height(48.dp)
-                .clickable { onSearchClick() },
-            shape = RoundedCornerShape(24.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = BrandYellow,
-                unfocusedBorderColor = BrandYellow,
-                disabledBorderColor = BrandYellow,
-                cursorColor = BrandYellow,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                disabledTextColor = Color.White,
-                focusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
-                unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
-                disabledPlaceholderColor = Color.White.copy(alpha = 0.5f),
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent
-            ),
-            singleLine = true,
-            readOnly = true,
-            enabled = true
-        )
+                .widthIn(max = 320.dp)
+                .fillMaxWidth(0.85f)
+                .clickable { onSearchClick() }
+        ) {
+            OutlinedTextField(
+                value = "",
+                onValueChange = {},
+                placeholder = { Text(placeholder) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = BrandYellow,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = BrandYellow,
+                    unfocusedBorderColor = BrandYellow,
+                    disabledBorderColor = BrandYellow,
+                    cursorColor = BrandYellow,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    disabledTextColor = Color.White,
+                    focusedPlaceholderColor = BrandYellow,
+                    unfocusedPlaceholderColor = BrandYellow,
+                    disabledPlaceholderColor = BrandYellow,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent
+                ),
+                singleLine = true,
+                readOnly = true,
+                enabled = false
+            )
+        }
+        
+        // Spacer before notification icon
+        if (showNotificationIcon) {
+            Spacer(modifier = Modifier.width(8.dp))
+        }
         
         // Notification Icon
         if (showNotificationIcon) {

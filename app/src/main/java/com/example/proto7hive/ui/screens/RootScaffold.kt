@@ -1,12 +1,11 @@
 package com.example.proto7hive.ui.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -14,18 +13,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.size
 import com.example.proto7hive.R
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -40,11 +38,22 @@ import com.example.proto7hive.ui.createpost.CreatePostRoute
 import com.example.proto7hive.ui.jobs.JobsRoute
 import com.example.proto7hive.ui.profile.ProfileRoute
 import com.example.proto7hive.ui.profile.ProfileSettingsRoute
+import com.example.proto7hive.ui.profile.UserProfileRoute
+import com.example.proto7hive.ui.search.SearchScreen
 import com.example.proto7hive.ui.auth.WelcomeScreen
 import com.example.proto7hive.ui.auth.LoginScreen
 import com.example.proto7hive.ui.auth.SignUpFlowScreen
 import com.example.proto7hive.ui.auth.ForgotPasswordScreen
 import com.example.proto7hive.ui.comments.CommentsRoute
+import com.example.proto7hive.ui.auth.AuthViewModel
+import com.example.proto7hive.ui.auth.AuthViewModelFactory
+import com.example.proto7hive.data.AuthRepository
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.filled.Person
 
 object Routes {
     const val WELCOME = "welcome"
@@ -57,6 +66,8 @@ object Routes {
     const val JOBS = "jobs" // Matches yerine
     const val PROFILE = "profile"
     const val PROFILE_SETTINGS = "profile_settings"
+    const val USER_PROFILE = "user/{userId}"
+    const val USER_PROFILE_WITH_JOB = "user/{userId}/job/{jobId}"
     
     // Detay sayfaları (ileride gerekebilir)
     const val PROJECT_DETAIL = "project/{projectId}"
@@ -64,12 +75,15 @@ object Routes {
     const val JOB_DETAIL = "job/{jobId}"
     const val COMMENTS_POST = "comments/post/{postId}"
     const val COMMENTS_JOB = "comments/job/{jobId}"
+    const val SEARCH = "search"
 
     fun projectDetail(projectId: String) = "project/$projectId"
     fun postDetail(postId: String) = "post/$postId"
     fun jobDetail(jobId: String) = "job/$jobId"
     fun commentsPost(postId: String) = "comments/post/$postId"
     fun commentsJob(jobId: String) = "comments/job/$jobId"
+    fun userProfile(userId: String) = "user/$userId"
+    fun userProfileWithJob(userId: String, jobId: String) = "user/$userId/job/$jobId"
 }
 
 @Composable
@@ -77,7 +91,11 @@ fun RootScaffold() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    var homeRefreshKey by remember { mutableStateOf(0) }
+    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(AuthRepository()))
+    
+    // Profile refresh key - Settings'ten dönüldüğünde artırılır
+    var profileRefreshKey by remember { mutableStateOf(0) }
+    val authState by authViewModel.uiState.collectAsState()
 
     Scaffold(
         bottomBar = { 
@@ -88,9 +106,14 @@ fun RootScaffold() {
                 Routes.FORGOT_PASSWORD,
                 Routes.COMMENTS_POST,
                 Routes.COMMENTS_JOB,
-                Routes.PROFILE_SETTINGS
+                Routes.PROFILE_SETTINGS,
+                Routes.SEARCH
             )) {
-                BottomBar(navController) 
+                BottomBar(
+                    navController = navController,
+                    currentRoute = currentRoute,
+                    currentUserId = authState.user?.uid
+                ) 
             }
         }
     ) { padding ->
@@ -139,7 +162,6 @@ fun RootScaffold() {
             }
             composable(Routes.HOME) { 
                 HomeFeedRoute(
-                    key = homeRefreshKey,
                     navController = navController
                 )
             }
@@ -150,8 +172,7 @@ fun RootScaffold() {
                 CreatePostRoute(
                     navController = navController,
                     onPostCreated = {
-                        // Post oluşturulunca Home'e git ve feed'i yenile
-                        homeRefreshKey++ // Refresh key'i değiştir
+                        // Post oluşturulunca Home'e git
                         navController.navigate(Routes.HOME) {
                             popUpTo(Routes.HOME) { inclusive = true }
                         }
@@ -159,7 +180,7 @@ fun RootScaffold() {
                 )
             }
             composable(Routes.JOBS) { 
-                JobsRoute()
+                JobsRoute(navController = navController)
             }
             composable(Routes.PROFILE) { 
                 ProfileRoute(
@@ -170,7 +191,8 @@ fun RootScaffold() {
                     },
                     onNavigateToSettings = {
                         navController.navigate(Routes.PROFILE_SETTINGS)
-                    }
+                    },
+                    refreshKey = profileRefreshKey
                 ) 
             }
             composable(Routes.PROFILE_SETTINGS) {
@@ -179,9 +201,19 @@ fun RootScaffold() {
                         navController.popBackStack()
                     },
                     onProfileUpdated = {
+                        profileRefreshKey++ // ProfileRoute'u refresh etmek için key'i artır
                         navController.popBackStack()
+                    },
+                    onLogout = {
+                        authViewModel.signOut()
+                        navController.navigate(Routes.WELCOME) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 )
+            }
+            composable(Routes.SEARCH) {
+                SearchScreen(navController = navController)
             }
             composable(
                 route = Routes.COMMENTS_POST,
@@ -213,12 +245,57 @@ fun RootScaffold() {
                     }
                 )
             }
+            composable(
+                route = Routes.USER_PROFILE,
+                arguments = listOf(
+                    navArgument("userId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getString("userId")
+                if (userId != null) {
+                    UserProfileRoute(
+                        userId = userId,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onNavigateToSearch = {
+                            navController.navigate(Routes.SEARCH)
+                        }
+                    )
+                }
+            }
+            composable(
+                route = Routes.USER_PROFILE_WITH_JOB,
+                arguments = listOf(
+                    navArgument("userId") { type = NavType.StringType },
+                    navArgument("jobId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getString("userId")
+                val jobId = backStackEntry.arguments?.getString("jobId")
+                if (userId != null && jobId != null) {
+                    UserProfileRoute(
+                        userId = userId,
+                        selectedJobId = jobId,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onNavigateToSearch = {
+                            navController.navigate(Routes.SEARCH)
+                        }
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun BottomBar(navController: NavHostController) {
+private fun BottomBar(
+    navController: NavHostController,
+    currentRoute: String?,
+    currentUserId: String?
+) {
     val items = listOf(
         Routes.HOME,
         Routes.CONNECTIONS,
@@ -226,55 +303,116 @@ private fun BottomBar(navController: NavHostController) {
         Routes.JOBS,
         Routes.PROFILE,
     )
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
     
-    NavigationBar(
-        containerColor = com.example.proto7hive.ui.theme.BrandBackgroundDark
+    // Kullanıcı profil bilgisini al - currentUserId değiştiğinde state'i sıfırla
+    var currentUser by remember { mutableStateOf<com.example.proto7hive.model.User?>(null) }
+    LaunchedEffect(currentUserId) {
+        // Önce null yap ki eski kullanıcı resmi gözükmesin
+        currentUser = null
+        if (currentUserId != null) {
+            val userRepository = com.example.proto7hive.data.FirestoreUserRepository()
+            currentUser = userRepository.getUser(currentUserId)
+        }
+    }
+    
+    Surface(
+        color = com.example.proto7hive.ui.theme.BrandBackgroundDark,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        items.forEach { route ->
-            val (iconRes, iconVector, label) = when (route) {
-                Routes.HOME -> Triple(R.drawable.ic_homefeed, null, "Home")
-                Routes.CONNECTIONS -> Triple(R.drawable.ic_connections_icon, null, "Connections")
-                Routes.CREATE_POST -> Triple(R.drawable.ic_add_hexagon, null, "Share")
-                Routes.JOBS -> Triple(R.drawable.ic_jobs_icon, null, "Jobs")
-                Routes.PROFILE -> Triple(null, Icons.Default.AccountCircle, "Profile")
-                else -> Triple(null, Icons.Default.Home, route)
-            }
-            val isSelected = currentRoute == route
-            val iconColor = if (isSelected) com.example.proto7hive.ui.theme.BrandYellow else Color.White
-            
-            NavigationBarItem(
-                selected = isSelected,
-                onClick = { if (!isSelected) navController.navigate(route) },
-                label = { Text(label) },
-                icon = { 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            items.forEach { route ->
+                val (iconRes, iconVector, contentDesc) = when (route) {
+                    Routes.HOME -> Triple(R.drawable.ic_homefeed, null, "Home")
+                    Routes.CONNECTIONS -> Triple(R.drawable.ic_connections_icon, null, "Connections")
+                    Routes.CREATE_POST -> Triple(R.drawable.ic_add_hexagon, null, "Share")
+                    Routes.JOBS -> Triple(R.drawable.ic_jobs_icon, null, "Jobs")
+                    Routes.PROFILE -> Triple(null, Icons.Default.AccountCircle, "Profile")
+                    else -> Triple(null, Icons.Default.Home, route)
+                }
+                val isSelected = when (route) {
+                    Routes.PROFILE -> currentRoute == route || 
+                        (currentRoute != null && (currentRoute.startsWith("user/") || currentRoute == Routes.PROFILE))
+                    else -> currentRoute == route
+                }
+                val iconColor = if (isSelected) com.example.proto7hive.ui.theme.BrandYellow else Color.White
+                
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { if (!isSelected) navController.navigate(route) },
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Icon
                     if (iconRes != null) {
-                        // Drawable icon kullan (Home ve Create Post)
                         Image(
                             painter = painterResource(id = iconRes),
-                            contentDescription = label,
+                            contentDescription = contentDesc,
                             modifier = Modifier.size(24.dp),
                             colorFilter = ColorFilter.tint(iconColor),
                             contentScale = ContentScale.Fit
                         )
+                    } else if (route == Routes.PROFILE) {
+                        // Profile icon - profil resmi varsa göster, yoksa default icon
+                        val borderColor = if (isSelected) com.example.proto7hive.ui.theme.BrandYellow else Color.Black
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .border(
+                                    width = 2.dp,
+                                    color = borderColor,
+                                    shape = CircleShape
+                                )
+                                .clip(CircleShape)
+                                .background(com.example.proto7hive.ui.theme.BrandBackgroundDark),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (currentUser?.profileImageUrl != null && currentUser?.profileImageUrl?.isNotBlank() == true) {
+                                AsyncImage(
+                                    model = "${currentUser!!.profileImageUrl}?v=${currentUserId}", // Cache bypass için version parametresi
+                                    contentDescription = contentDesc,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = contentDesc,
+                                    tint = iconColor,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
                     } else if (iconVector != null) {
-                        // Material Icon kullan
                         Icon(
-                            imageVector = iconVector, 
-                            contentDescription = label,
-                            tint = iconColor
+                            imageVector = iconVector,
+                            contentDescription = contentDesc,
+                            tint = iconColor,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
-                },
-                colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                    selectedIconColor = com.example.proto7hive.ui.theme.BrandYellow,
-                    selectedTextColor = com.example.proto7hive.ui.theme.BrandYellow,
-                    indicatorColor = com.example.proto7hive.ui.theme.BrandYellow.copy(alpha = 0.2f),
-                    unselectedIconColor = Color.White,
-                    unselectedTextColor = Color.White
-                )
-            )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    // Alt çizgi (sadece seçili olan için)
+                    Box(
+                        modifier = Modifier
+                            .width(32.dp)
+                            .height(2.dp)
+                            .background(
+                                if (isSelected) com.example.proto7hive.ui.theme.BrandYellow 
+                                else Color.Transparent
+                            )
+                    )
+                }
+            }
         }
     }
 }

@@ -15,11 +15,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,7 +42,8 @@ import com.example.proto7hive.ui.theme.BrandYellow
 @Composable
 fun ProfileSettingsRoute(
     onBack: () -> Unit,
-    onProfileUpdated: () -> Unit = {}
+    onProfileUpdated: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val profileViewModel: ProfileViewModel = viewModel(
         factory = ProfileViewModelFactory()
@@ -50,7 +56,8 @@ fun ProfileSettingsRoute(
         profileViewModel = profileViewModel,
         settingsViewModel = settingsViewModel,
         onBack = onBack,
-        onProfileUpdated = onProfileUpdated
+        onProfileUpdated = onProfileUpdated,
+        onLogout = onLogout
     )
 }
 
@@ -60,7 +67,8 @@ fun ProfileSettingsScreen(
     profileViewModel: ProfileViewModel,
     settingsViewModel: ProfileSettingsViewModel,
     onBack: () -> Unit,
-    onProfileUpdated: () -> Unit
+    onProfileUpdated: () -> Unit,
+    onLogout: () -> Unit = {}
 ) {
     val profileState by profileViewModel.uiState.collectAsState()
     val settingsState by settingsViewModel.uiState.collectAsState()
@@ -346,6 +354,114 @@ fun ProfileSettingsScreen(
                 }
             }
 
+            // Tag Selection Section
+            item(key = "tag_selection") {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF2A2A2A)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "Tag",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            text = "Profesyonel durumunuzu belirtin",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+
+                        // Tag Options
+                        val tags = listOf(
+                            Triple("JOB", "İş arıyor", Color(0xFF258A00)),
+                            Triple("INT", "Staj arıyor", Color(0xFF005888)),
+                            Triple("TEAM", "Proje veya ekip arkadaşı arıyor", Color(0xFFFFC107)),
+                            Triple("HIRING", "İşe alım yapıyor / ekip büyütüyor", Color(0xFFB03737)),
+                            Triple("MENTOR", "Mentorluk veriyor", Color(0xFF4B0079))
+                        )
+
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            tags.forEach { (tag, description, tagColor) ->
+                                val isSelected = settingsState.tag == tag
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(
+                                            if (isSelected) tagColor.copy(alpha = 0.3f) 
+                                            else Color.White.copy(alpha = 0.05f)
+                                        )
+                                        .border(
+                                            width = if (isSelected) 2.dp else 1.dp,
+                                            color = if (isSelected) tagColor else Color.White.copy(alpha = 0.3f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                        .clickable {
+                                            settingsViewModel.updateTag(if (isSelected) null else tag)
+                                        }
+                                        .padding(12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                // Tag badge
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(tagColor, RoundedCornerShape(4.dp))
+                                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                ) {
+                                                    Text(
+                                                        text = tag,
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color.White
+                                                    )
+                                                }
+                                                Text(
+                                                    text = description,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = Color.White
+                                                )
+                                            }
+                                        }
+                                        RadioButton(
+                                            selected = isSelected,
+                                            onClick = {
+                                                settingsViewModel.updateTag(if (isSelected) null else tag)
+                                            },
+                                            colors = RadioButtonDefaults.colors(
+                                                selectedColor = tagColor,
+                                                unselectedColor = Color.White.copy(alpha = 0.5f)
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // Skills Section
             item(key = "skills") {
                 Card(
@@ -446,7 +562,7 @@ fun ProfileSettingsScreen(
 
             }
             
-            // Save Button - Floating at bottom
+            // Save Button and Logout Button - Floating at bottom
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -458,32 +574,65 @@ fun ProfileSettingsScreen(
                     color = BrandBackgroundDark,
                     shadowElevation = 8.dp
                 ) {
-                    Button(
-                        onClick = {
-                            settingsViewModel.saveProfile()
-                        },
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
                             .padding(horizontal = 16.dp, vertical = 8.dp),
-                        enabled = !settingsState.isSaving,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = BrandYellow,
-                            contentColor = Color.Black,
-                            disabledContainerColor = Color.Gray
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        if (settingsState.isSaving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.Black,
-                                strokeWidth = 2.dp
+                        // Save Button
+                        Button(
+                            onClick = {
+                                settingsViewModel.saveProfile()
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            enabled = !settingsState.isSaving,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = BrandYellow,
+                                contentColor = Color.Black,
+                                disabledContainerColor = Color.Gray
+                            ),
+                            shape = RoundedCornerShape(22.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                        ) {
+                            if (settingsState.isSaving) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color.Black,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text(
+                                    text = "Kaydet",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        
+                        // Logout Button
+                        Button(
+                            onClick = onLogout,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            ),
+                            shape = RoundedCornerShape(22.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ExitToApp,
+                                contentDescription = "Çıkış Yap",
+                                modifier = Modifier.size(18.dp)
                             )
-                        } else {
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Kaydet",
-                                style = MaterialTheme.typography.titleMedium,
+                                text = "Çıkış Yap",
+                                style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold
                             )
                         }

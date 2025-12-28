@@ -19,6 +19,7 @@ data class ProfileSettingsUiState(
     val surname: String = "",
     val department: String = "",
     val bio: String = "",
+    val tag: String? = null, // JOB, INT, TEAM, HIRING, MENTOR
     val skills: List<String> = emptyList(),
     val profileImageUri: Uri? = null, // Seçilen görsel URI'si (henüz yüklenmemiş)
     val profileImageUrl: String? = null, // Firebase Storage'dan gelen URL (yüklenmiş)
@@ -37,11 +38,14 @@ class ProfileSettingsViewModel(
     val uiState: StateFlow<ProfileSettingsUiState> = _uiState
 
     fun loadUserData(user: User) {
+        // Tag'i badges'den al (badges listesinin ilk elemanı, yoksa null)
+        val tag = if (user.badges.isNotEmpty()) user.badges.first() else null
         _uiState.value = ProfileSettingsUiState(
             name = user.name,
             surname = user.surname,
             department = user.department ?: "",
             bio = user.bio ?: "",
+            tag = tag,
             skills = user.skills,
             profileImageUrl = user.profileImageUrl
         )
@@ -61,6 +65,10 @@ class ProfileSettingsViewModel(
 
     fun updateBio(bio: String) {
         _uiState.value = _uiState.value.copy(bio = bio)
+    }
+
+    fun updateTag(tag: String?) {
+        _uiState.value = _uiState.value.copy(tag = tag)
     }
 
     fun addSkill(skill: String) {
@@ -157,21 +165,28 @@ class ProfileSettingsViewModel(
                 // Mevcut kullanıcı bilgilerini al (diğer alanları korumak için)
                 val existingUser = userRepository.getUser(currentUser.uid)
                 
-                // Kullanıcı bilgilerini güncelle (mevcut bilgileri koru)
+                // Tag'i badges listesine kaydet (tag null ise boş liste, değilse tek elemanlı liste)
+                val badges = if (currentState.tag != null) listOf(currentState.tag) else emptyList()
+                
+                // Kullanıcı bilgilerini güncelle (mevcut bilgileri koru, userType değiştirme)
                 val updatedUser = existingUser?.copy(
                     name = currentState.name,
                     surname = currentState.surname,
                     department = currentState.department.ifBlank { null },
                     bio = currentState.bio.ifBlank { null },
+                    badges = badges, // Tag'i badges'e kaydet
                     skills = currentState.skills,
                     profileImageUrl = finalImageUrl ?: currentState.profileImageUrl ?: existingUser.profileImageUrl
+                    // userType değiştirilmiyor - mevcut değerini koru
                 ) ?: User(
                     id = currentUser.uid,
                     name = currentState.name,
                     surname = currentState.surname,
                     email = currentUser.email ?: "",
+                    userType = null, // Yeni kullanıcı için null (SignUpViewModel'de set edilir)
                     department = currentState.department.ifBlank { null },
                     bio = currentState.bio.ifBlank { null },
+                    badges = badges, // Tag'i badges'e kaydet
                     skills = currentState.skills,
                     profileImageUrl = finalImageUrl ?: currentState.profileImageUrl
                 )
@@ -180,6 +195,7 @@ class ProfileSettingsViewModel(
 
                 // Güncellenmiş kullanıcı bilgilerini tekrar yükle
                 val updatedUserFromDb = userRepository.getUser(currentUser.uid)
+                val updatedTag = if (updatedUserFromDb?.badges?.isNotEmpty() == true) updatedUserFromDb.badges.first() else null
                 _uiState.value = if (updatedUserFromDb != null) {
                     ProfileSettingsUiState(
                         updateSuccess = true,
@@ -187,6 +203,7 @@ class ProfileSettingsViewModel(
                         surname = updatedUserFromDb.surname,
                         department = updatedUserFromDb.department ?: "",
                         bio = updatedUserFromDb.bio ?: "",
+                        tag = updatedTag, // Tag'i badges'den al
                         skills = updatedUserFromDb.skills,
                         profileImageUrl = updatedUserFromDb.profileImageUrl,
                         isSaving = false
@@ -198,6 +215,7 @@ class ProfileSettingsViewModel(
                         surname = currentState.surname,
                         department = currentState.department,
                         bio = currentState.bio,
+                        tag = currentState.tag,
                         skills = currentState.skills,
                         profileImageUrl = finalImageUrl ?: currentState.profileImageUrl,
                         isSaving = false

@@ -46,7 +46,6 @@ import kotlin.math.abs
 
 @Composable
 fun HomeFeedRoute(
-    key: Any? = null, // Dışarıdan değişince refresh tetiklenir
     navController: NavController? = null
 ) {
     val viewModel: HomeFeedViewModel = viewModel(
@@ -57,8 +56,8 @@ fun HomeFeedRoute(
         )
     )
     
-    // Key değiştiğinde (post oluşturulduğunda) refresh et
-    LaunchedEffect(key) {
+    // İlk yüklemede refresh et
+    LaunchedEffect(Unit) {
         viewModel.refresh()
     }
     
@@ -80,42 +79,37 @@ fun HomeFeedScreen(
             .fillMaxSize()
             .background(BrandBackgroundDark)
     ) {
-        // Header with Logo
+        // Header with Logo - Üstte, minimal padding
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 0.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(72.dp),
+                modifier = Modifier.height(80.dp),
                 contentScale = ContentScale.Fit
             )
         }
         
-        // Search Bar
+        // Search Bar - Logo'nun tam altında, arada boşluk yok
         SearchBar(
-            onSearchClick = { /* TODO: Navigate to search screen */ },
-            onNotificationClick = { /* TODO: Navigate to notifications */ }
+            modifier = Modifier.padding(top = 0.dp, bottom = 0.dp),
+            onSearchClick = {
+                navController?.navigate(com.example.proto7hive.ui.screens.Routes.SEARCH)
+            },
+            onNotificationClick = { }
         )
         
-        // Content Area - Post Feed
+        // Content Area - Post Feed - Kalan tüm alanı kaplar, navbar'ın üstüne kadar
         when {
-            state.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = BrandYellow)
-                }
-            }
             state.errorMessage != null -> {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -131,7 +125,7 @@ fun HomeFeedScreen(
             }
             state.posts.isEmpty() -> {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -142,8 +136,8 @@ fun HomeFeedScreen(
             }
             else -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp),
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 60.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(state.posts) { post ->
@@ -154,6 +148,11 @@ fun HomeFeedScreen(
                             onCommentClick = {
                                 if (navController != null && post.id.isNotEmpty()) {
                                     navController.navigate(Routes.commentsPost(post.id))
+                                }
+                            },
+                            onUserClick = {
+                                if (navController != null && post.userId.isNotEmpty()) {
+                                    navController.navigate(Routes.userProfile(post.userId))
                                 }
                             }
                         )
@@ -168,7 +167,8 @@ fun HomeFeedScreen(
 fun PostCard(
     post: com.example.proto7hive.model.Post,
     user: com.example.proto7hive.model.User?,
-    onCommentClick: () -> Unit = {}
+    onCommentClick: () -> Unit = {},
+    onUserClick: () -> Unit = {}
 ) {
     var isLiked by remember { mutableStateOf(false) }
     
@@ -184,7 +184,8 @@ fun PostCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                    .padding(bottom = 12.dp)
+                    .clickable(onClick = onUserClick),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Profile Picture
