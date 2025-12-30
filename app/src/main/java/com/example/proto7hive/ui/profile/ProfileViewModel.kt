@@ -11,9 +11,12 @@ import com.example.proto7hive.data.UserRepository
 import com.example.proto7hive.data.FirestoreUserRepository
 import com.example.proto7hive.data.ConnectionRepository
 import com.example.proto7hive.data.FirestoreConnectionRepository
+import com.example.proto7hive.data.NotificationRepository
+import com.example.proto7hive.data.FirestoreNotificationRepository
 import com.example.proto7hive.model.Post
 import com.example.proto7hive.model.Job
 import com.example.proto7hive.model.User
+import com.example.proto7hive.model.Notification
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +29,7 @@ data class ProfileUiState(
     val jobs: List<Job> = emptyList(),
     val connectionsCount: Int = 0,
     val isConnected: Boolean = false, // Current user bu kullanıcıyı takip ediyor mu?
+    val connectionRequestStatus: String? = null, // null, "pending" (gönderildi, bekliyor), "sent" (gönderildi)
     val errorMessage: String? = null
 )
 
@@ -34,27 +38,57 @@ class ProfileViewModel(
     private val userRepository: UserRepository = FirestoreUserRepository(),
     private val postRepository: PostRepository = FirestorePostRepository(),
     private val jobRepository: JobRepository = FirestoreJobRepository(),
-    private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository()
+    private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository(),
+    private val notificationRepository: NotificationRepository = FirestoreNotificationRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState
     
-    fun addConnection(targetUserId: String) {
+    fun sendConnectionRequest(targetUserId: String) {
         viewModelScope.launch {
             try {
                 val currentUser = FirebaseAuth.getInstance().currentUser
-                if (currentUser != null) {
-                    connectionRepository.addConnection(currentUser.uid, targetUserId)
-                    // Refresh profile to update connections count
-                    loadProfile()
+                if (currentUser == null) {
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Giriş yapmamış kullanıcı"
+                    )
+                    return@launch
                 }
+                
+                // İstek gönder
+                val requestId = connectionRepository.sendConnectionRequest(currentUser.uid, targetUserId)
+                
+                // İstek alan kullanıcıya bildirim gönder
+                val currentUserData = userRepository.getUser(currentUser.uid)
+                if (currentUserData != null) {
+                    val notification = Notification(
+                        id = "",
+                        userId = targetUserId, // İsteği alan kullanıcı
+                        fromUserId = currentUser.uid, // İsteği gönderen
+                        type = "FOLLOW_REQUEST",
+                        relatedId = requestId,
+                        relatedType = "connection_request",
+                        message = "${currentUserData.name} ${currentUserData.surname} sent you a connection request",
+                        timestamp = System.currentTimeMillis(),
+                        isRead = false
+                    )
+                    notificationRepository.createNotification(notification)
+                }
+                
+                // Profile'ı yenile (connectionRequestStatus güncellenecek)
+                loadProfile()
             } catch (t: Throwable) {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = t.message ?: "Bağlantı eklenirken hata oluştu"
+                    errorMessage = t.message ?: "Connection request gönderilirken hata oluştu"
                 )
             }
         }
+    }
+    
+    fun addConnection(targetUserId: String) {
+        // Eski fonksiyon, artık kullanılmıyor ama geriye dönük uyumluluk için bırakıyoruz
+        sendConnectionRequest(targetUserId)
     }
 
     init {
@@ -106,6 +140,19 @@ class ProfileViewModel(
                 } else {
                     false
                 }
+                
+                // Connection request durumu
+                val connectionRequestStatus: String? = if (currentUser != null && userId != null && currentUser.uid != targetUserId && !isConnected) {
+                    val sentRequests = connectionRepository.getSentRequests(currentUser.uid)
+                    // Eğer current user bu kullanıcıya istek göndermişse "pending"
+                    if (sentRequests.any { it.toUserId == targetUserId }) {
+                        "pending"
+                    } else {
+                        null
+                    }
+                } else {
+                    null
+                }
 
                 _uiState.value = ProfileUiState(
                     isLoading = false,
@@ -113,7 +160,8 @@ class ProfileViewModel(
                     posts = posts,
                     jobs = jobs,
                     connectionsCount = connectionsCount,
-                    isConnected = isConnected
+                    isConnected = isConnected,
+                    connectionRequestStatus = connectionRequestStatus
                 )
             } catch (t: Throwable) {
                 _uiState.value = ProfileUiState(
@@ -134,12 +182,13 @@ class ProfileViewModelFactory(
     private val userRepository: UserRepository = FirestoreUserRepository(),
     private val postRepository: PostRepository = FirestorePostRepository(),
     private val jobRepository: JobRepository = FirestoreJobRepository(),
-    private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository()
+    private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository(),
+    private val notificationRepository: NotificationRepository = FirestoreNotificationRepository()
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
-            return ProfileViewModel(userId, userRepository, postRepository, jobRepository, connectionRepository) as T
+            return ProfileViewModel(userId, userRepository, postRepository, jobRepository, connectionRepository, notificationRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

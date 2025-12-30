@@ -43,6 +43,7 @@ fun ProfileRoute(
     onNavigateToOnboarding: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     refreshKey: Int = 0, // Key değiştiğinde ViewModel refresh edilir
     authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(AuthRepository())),
     profileViewModel: ProfileViewModel = viewModel(
@@ -64,6 +65,7 @@ fun ProfileRoute(
         onNavigateToOnboarding = onNavigateToOnboarding,
         onNavigateToSettings = onNavigateToSettings,
         onNavigateToSearch = onNavigateToSearch,
+        onNavigateToNotifications = onNavigateToNotifications,
         onRefresh = { profileViewModel.refresh() },
         isOwnProfile = true,
         onAddConnection = null // Kendi profilinde connect butonu yok
@@ -76,6 +78,7 @@ fun UserProfileRoute(
     selectedJobId: String? = null,
     onNavigateBack: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(AuthRepository())),
     profileViewModel: ProfileViewModel = viewModel(
 factory = ProfileViewModelFactory(userId = userId)
@@ -91,13 +94,14 @@ factory = ProfileViewModelFactory(userId = userId)
         onNavigateToOnboarding = { },
         onNavigateToSettings = { }, // Başka kullanıcının profilinde settings yok
         onNavigateToSearch = onNavigateToSearch,
+        onNavigateToNotifications = onNavigateToNotifications,
         onRefresh = { profileViewModel.refresh() },
         isOwnProfile = currentUserId == userId,
         onNavigateBack = onNavigateBack,
         initialTab = if (selectedJobId != null) 1 else 0, // Works tab if jobId provided
         selectedJobId = selectedJobId,
         onAddConnection = { targetUserId ->
-            profileViewModel.addConnection(targetUserId)
+            profileViewModel.sendConnectionRequest(targetUserId)
         }
     )
 }
@@ -109,6 +113,7 @@ fun ProfileScreen(
     onNavigateToOnboarding: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     onRefresh: () -> Unit,
     isOwnProfile: Boolean = true,
     onNavigateBack: () -> Unit = {},
@@ -162,7 +167,7 @@ fun ProfileScreen(
         SearchBar(
             modifier = Modifier.padding(top = 0.dp, bottom = 0.dp),
             onSearchClick = onNavigateToSearch,
-            onNotificationClick = { }
+            onNotificationClick = onNavigateToNotifications
         )
 
         // Content Area
@@ -200,6 +205,7 @@ fun ProfileScreen(
                         onEditProfile = onEditProfileClick,
                         isOwnProfile = isOwnProfile,
                         isConnected = isConnected,
+                        connectionRequestStatus = profileState.connectionRequestStatus,
                         onAddConnection = onAddConnection
                     )
 
@@ -319,6 +325,7 @@ fun ProfileHeader(
     onEditProfile: () -> Unit = {},
     isOwnProfile: Boolean = true,
     isConnected: Boolean = false,
+    connectionRequestStatus: String? = null, // null, "pending", "sent"
     onAddConnection: ((String) -> Unit)? = null
 ) {
     Card(
@@ -497,36 +504,61 @@ fun ProfileHeader(
                 )
             }
             
-            // Connect Button (sadece başka kullanıcının profilinde)
+            // Connect/Request Button (sadece başka kullanıcının profilinde)
             if (!isOwnProfile && onAddConnection != null && user?.id != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = { onAddConnection(user.id) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isConnected) Color.Transparent else BrandYellow
-                    ),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier
-                        .height(32.dp)
-                        .widthIn(min = 90.dp)
-                        .then(
-                            if (isConnected) {
-                                Modifier.border(
-                                    width = 1.dp,
-                                    color = Color.White.copy(alpha = 0.3f),
-                                    shape = RoundedCornerShape(20.dp)
-                                )
-                            } else {
-                                Modifier
-                            }
+                val isPending = connectionRequestStatus == "pending"
+                
+                if (isConnected) {
+                    // Connected state - Outlined button style
+                    OutlinedButton(
+                        onClick = { },
+                        enabled = false,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color(0xFF353535),
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0xFF353535),
+                            disabledContentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.4f)),
+                        modifier = Modifier
+                            .height(32.dp)
+                            .widthIn(min = 90.dp)
+                    ) {
+                        Text(
+                            text = "Connected",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
-                ) {
-                    Text(
-                        text = "Connect",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isConnected) Color.White.copy(alpha = 0.7f) else Color.Black
-                    )
+                    }
+                } else {
+                    // Connect or Pending state
+                    Button(
+                        onClick = { 
+                            if (!isPending) {
+                                onAddConnection(user.id)
+                            }
+                        },
+                        enabled = !isPending,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isPending) Color(0xFF404040) else BrandYellow,
+                            disabledContainerColor = Color(0xFF404040),
+                            contentColor = if (isPending) Color.White else Color.Black,
+                            disabledContentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier
+                            .height(32.dp)
+                            .widthIn(min = 90.dp)
+                    ) {
+                        Text(
+                            text = if (isPending) "Pending" else "Connect",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

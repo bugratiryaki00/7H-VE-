@@ -7,8 +7,15 @@ import com.example.proto7hive.data.CommentRepository
 import com.example.proto7hive.data.FirestoreCommentRepository
 import com.example.proto7hive.data.FirestoreUserRepository
 import com.example.proto7hive.data.UserRepository
+import com.example.proto7hive.data.NotificationRepository
+import com.example.proto7hive.data.FirestoreNotificationRepository
+import com.example.proto7hive.data.PostRepository
+import com.example.proto7hive.data.FirestorePostRepository
+import com.example.proto7hive.data.JobRepository
+import com.example.proto7hive.data.FirestoreJobRepository
 import com.example.proto7hive.model.Comment
 import com.example.proto7hive.model.User
+import com.example.proto7hive.model.Notification
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +33,9 @@ data class CommentsUiState(
 class CommentsViewModel(
     private val commentRepository: CommentRepository = FirestoreCommentRepository(),
     private val userRepository: UserRepository = FirestoreUserRepository(),
+    private val notificationRepository: NotificationRepository = FirestoreNotificationRepository(),
+    private val postRepository: PostRepository = FirestorePostRepository(),
+    private val jobRepository: JobRepository = FirestoreJobRepository(),
     val postId: String? = null,
     val jobId: String? = null
 ) : ViewModel() {
@@ -100,6 +110,33 @@ class CommentsViewModel(
                 )
 
                 commentRepository.createComment(comment)
+                
+                // Yorumu yapan kullanıcının bilgilerini al
+                val currentUserData = userRepository.getUser(currentUser.uid)
+                
+                // Post sahibine veya job sahibine bildirim gönder (kendine değilse)
+                val ownerUserId: String? = if (postId != null) {
+                    postRepository.getPost(postId)?.userId
+                } else if (jobId != null) {
+                    jobRepository.getJob(jobId)?.userId
+                } else {
+                    null
+                }
+                
+                if (ownerUserId != null && ownerUserId != currentUser.uid && currentUserData != null) {
+                    val notification = Notification(
+                        id = "",
+                        userId = ownerUserId, // Post/job sahibi
+                        fromUserId = currentUser.uid, // Yorum yapan
+                        type = "COMMENT",
+                        relatedId = postId ?: jobId,
+                        relatedType = if (postId != null) "post" else "job",
+                        message = "${currentUserData.name} ${currentUserData.surname} commented your ${if (postId != null) "post" else "job"}: \"${text.take(50)}${if (text.length > 50) "..." else ""}\"",
+                        timestamp = System.currentTimeMillis(),
+                        isRead = false
+                    )
+                    notificationRepository.createNotification(notification)
+                }
                 
                 // Yorumu ekledikten sonra listeyi yeniden yükle
                 loadComments()

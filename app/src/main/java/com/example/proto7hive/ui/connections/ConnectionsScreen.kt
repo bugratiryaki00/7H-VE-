@@ -81,7 +81,9 @@ fun ConnectionsScreen(
             onSearchClick = {
                 navController?.navigate(com.example.proto7hive.ui.screens.Routes.SEARCH)
             },
-            onNotificationClick = { }
+            onNotificationClick = {
+                navController?.navigate(com.example.proto7hive.ui.screens.Routes.NOTIFICATIONS)
+            }
         )
 
         // Content Area - Kalan tüm alanı kaplar, navbar'ın üstüne kadar
@@ -134,7 +136,7 @@ fun ConnectionsScreen(
                                 items(state.suggestedConnections) { user ->
                                     RecommendationCard(
                                         user = user,
-                                        onAddClick = { viewModel.addConnection(user.id) },
+                                        onAddClick = { viewModel.sendConnectionRequest(user.id) },
                                         onClick = {
                                             navController?.navigate(Routes.userProfile(user.id))
                                         }

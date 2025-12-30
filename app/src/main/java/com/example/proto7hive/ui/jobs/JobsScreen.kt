@@ -88,7 +88,9 @@ fun JobsScreen(
             onSearchClick = {
                 navController?.navigate(com.example.proto7hive.ui.screens.Routes.SEARCH)
             },
-            onNotificationClick = { }
+            onNotificationClick = {
+                navController?.navigate(com.example.proto7hive.ui.screens.Routes.NOTIFICATIONS)
+            }
         )
 
         // Content Area - Kalan tüm alanı kaplar, navbar'ın üstüne kadar

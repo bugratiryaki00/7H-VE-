@@ -66,7 +66,8 @@ data class Post(
     val text: String = "",
     val imageUrl: String? = null,
     val timestamp: Long = 0L, // Unix timestamp (milisaniye)
-    val postType: String = "post" // "post" veya "work"
+    val postType: String = "post", // "post" veya "work"
+    val likes: List<String> = emptyList() // Beğenen kullanıcı ID'leri
 )
 
 @Serializable
@@ -96,6 +97,28 @@ data class Comment(
     val jobId: String? = null, // Job ID'si (work için)
     val userId: String = "", // Yorum yapan kullanıcı ID'si
     val text: String = "", // Yorum metni
+    val timestamp: Long = 0L // Unix timestamp (milisaniye)
+)
+
+@Serializable
+data class Notification(
+    val id: String = "",
+    val userId: String = "", // Bildirimi alan kullanıcı
+    val fromUserId: String = "", // Bildirimi gönderen kullanıcı
+    val type: String = "", // COMMENT, FOLLOW_REQUEST, INVITE
+    val relatedId: String? = null, // postId, jobId, projectId, vs.
+    val relatedType: String? = null, // post, job, project, team
+    val message: String = "", // Bildirim mesajı
+    val timestamp: Long = 0L, // Unix timestamp (milisaniye)
+    val isRead: Boolean = false
+)
+
+@Serializable
+data class ConnectionRequest(
+    val id: String = "",
+    val fromUserId: String = "", // İsteği gönderen kullanıcı
+    val toUserId: String = "", // İsteği alan kullanıcı
+    val status: String = "pending", // pending, accepted, rejected
     val timestamp: Long = 0L // Unix timestamp (milisaniye)
 )
 

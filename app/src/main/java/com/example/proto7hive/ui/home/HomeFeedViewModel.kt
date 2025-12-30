@@ -9,8 +9,11 @@ import com.example.proto7hive.data.ConnectionRepository
 import com.example.proto7hive.data.FirestoreConnectionRepository
 import com.example.proto7hive.data.UserRepository
 import com.example.proto7hive.data.FirestoreUserRepository
+import com.example.proto7hive.data.NotificationRepository
+import com.example.proto7hive.data.FirestoreNotificationRepository
 import com.example.proto7hive.model.Post
 import com.example.proto7hive.model.User
+import com.example.proto7hive.model.Notification
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +29,8 @@ data class HomeFeedUiState(
 class HomeFeedViewModel(
     private val postRepository: PostRepository = FirestorePostRepository(),
     private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository(),
-    private val userRepository: UserRepository = FirestoreUserRepository()
+    private val userRepository: UserRepository = FirestoreUserRepository(),
+    private val notificationRepository: NotificationRepository = FirestoreNotificationRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeFeedUiState())
@@ -87,17 +91,76 @@ class HomeFeedViewModel(
     fun refresh() {
         loadPosts()
     }
+
+    fun likePost(postId: String) {
+        viewModelScope.launch {
+            try {
+                val currentUser = FirebaseAuth.getInstance().currentUser ?: return@launch
+                
+                // Post'u getir
+                val post = postRepository.getPost(postId) ?: return@launch
+                
+                // Beğeni yap
+                postRepository.likePost(postId, currentUser.uid)
+                
+                // Beğeni yapan kullanıcının bilgilerini al
+                val currentUserData = userRepository.getUser(currentUser.uid) ?: return@launch
+                
+                // Post sahibine bildirim gönder (kendine değilse)
+                if (post.userId != currentUser.uid) {
+                    val notification = Notification(
+                        id = "",
+                        userId = post.userId, // Post sahibi
+                        fromUserId = currentUser.uid, // Beğeni yapan
+                        type = "COMMENT", // Beğeni için COMMENT tipi kullanıyoruz (bildirim ekranında "Comments" sekmesinde gösterilecek)
+                        relatedId = postId,
+                        relatedType = "post",
+                        message = "${currentUserData.name} ${currentUserData.surname} liked your post",
+                        timestamp = System.currentTimeMillis(),
+                        isRead = false
+                    )
+                    notificationRepository.createNotification(notification)
+                }
+                
+                // Post listesini yenile
+                loadPosts()
+            } catch (t: Throwable) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = t.message ?: "Beğeni işlemi başarısız"
+                )
+            }
+        }
+    }
+
+    fun unlikePost(postId: String) {
+        viewModelScope.launch {
+            try {
+                val currentUser = FirebaseAuth.getInstance().currentUser ?: return@launch
+                
+                // Beğeniyi kaldır
+                postRepository.unlikePost(postId, currentUser.uid)
+                
+                // Post listesini yenile
+                loadPosts()
+            } catch (t: Throwable) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = t.message ?: "Beğeni kaldırma işlemi başarısız"
+                )
+            }
+        }
+    }
 }
 
 class HomeFeedViewModelFactory(
     private val postRepository: PostRepository,
     private val connectionRepository: ConnectionRepository,
-    private val userRepository: UserRepository = FirestoreUserRepository()
+    private val userRepository: UserRepository = FirestoreUserRepository(),
+    private val notificationRepository: NotificationRepository = FirestoreNotificationRepository()
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeFeedViewModel::class.java)) {
-            return HomeFeedViewModel(postRepository, connectionRepository, userRepository) as T
+            return HomeFeedViewModel(postRepository, connectionRepository, userRepository, notificationRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -5,9 +5,11 @@ import com.example.proto7hive.model.Comment
 import com.example.proto7hive.model.Project
 import com.example.proto7hive.model.PortfolioCard
 import com.example.proto7hive.model.MatchSuggestion
+import com.example.proto7hive.model.Notification
 import com.example.proto7hive.model.Post
 import com.example.proto7hive.model.User
 import com.example.proto7hive.model.Job
+import com.example.proto7hive.model.ConnectionRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FieldPath
@@ -126,6 +128,21 @@ class FirestorePostRepository(
             post.text.lowercase().contains(lowerQuery)
         }.sortedByDescending { it.timestamp }
     }
+
+    override suspend fun getPost(postId: String): Post? {
+        val doc = db.collection("posts").document(postId).get().await()
+        return doc.toObject(Post::class.java)?.copy(id = doc.id)
+    }
+
+    override suspend fun likePost(postId: String, userId: String) {
+        db.collection("posts").document(postId)
+            .update("likes", FieldValue.arrayUnion(userId)).await()
+    }
+
+    override suspend fun unlikePost(postId: String, userId: String) {
+        db.collection("posts").document(postId)
+            .update("likes", FieldValue.arrayRemove(userId)).await()
+    }
 }
 
 class FirestoreUserRepository(
@@ -183,7 +200,43 @@ class FirestoreConnectionRepository(
     override suspend fun getConnections(userId: String): List<String> {
         val user = db.collection("users").document(userId).get().await()
         val userObj = user.toObject(User::class.java)
-        return userObj?.connections ?: emptyList()
+        val directConnections = userObj?.connections ?: emptyList()
+        
+        // Accepted connection request'leri de connections olarak ekle
+        // Ancak sadece kullanıcının kendi request'leri okunabilir (security rules nedeniyle)
+        // Başka bir kullanıcının profilini görüntülerken permission denied alabiliriz
+        val acceptedToUserIds = try {
+            // Gönderilen accepted request'ler (fromUserId == userId, status == accepted)
+            val sentAcceptedRequests = db.collection("connectionRequests")
+                .whereEqualTo("fromUserId", userId)
+                .whereEqualTo("status", "accepted")
+                .get()
+                .await()
+            sentAcceptedRequests.documents.mapNotNull { doc ->
+                doc.data?.get("toUserId") as? String
+            }
+        } catch (e: Exception) {
+            // Permission denied veya başka bir hata - sadece direkt connections'ı kullan
+            emptyList()
+        }
+        
+        val acceptedFromUserIds = try {
+            // Gelen accepted request'ler (toUserId == userId, status == accepted)
+            val receivedAcceptedRequests = db.collection("connectionRequests")
+                .whereEqualTo("toUserId", userId)
+                .whereEqualTo("status", "accepted")
+                .get()
+                .await()
+            receivedAcceptedRequests.documents.mapNotNull { doc ->
+                doc.data?.get("fromUserId") as? String
+            }
+        } catch (e: Exception) {
+            // Permission denied veya başka bir hata - sadece direkt connections'ı kullan
+            emptyList()
+        }
+        
+        // Tüm connections'ları birleştir (duplicate'leri kaldır)
+        return (directConnections + acceptedToUserIds + acceptedFromUserIds).distinct()
     }
 
     override suspend fun addConnection(userId: String, connectionUserId: String) {
@@ -204,9 +257,101 @@ class FirestoreConnectionRepository(
 
     override suspend fun getSuggestedConnections(userId: String): List<User> {
         val currentConnections = getConnections(userId)
+        val sentRequests = getSentRequests(userId).map { it.toUserId }
+        val pendingRequests = getPendingRequests(userId).map { it.fromUserId }
         val allUsers = FirestoreUserRepository(db).getAllUsers()
-        // Basit öneri: bağlantısı olmayanlar (ileride daha gelişmiş algoritma)
-        return allUsers.filter { it.id != userId && it.id !in currentConnections }
+        // Basit öneri: bağlantısı olmayanlar ve istek gönderilmemiş olanlar
+        return allUsers.filter { 
+            it.id != userId && 
+            it.id !in currentConnections &&
+            it.id !in sentRequests &&
+            it.id !in pendingRequests
+        }
+    }
+
+    override suspend fun sendConnectionRequest(fromUserId: String, toUserId: String): String {
+        val doc = db.collection("connectionRequests").document()
+        val data = hashMapOf(
+            "fromUserId" to fromUserId,
+            "toUserId" to toUserId,
+            "status" to "pending",
+            "timestamp" to System.currentTimeMillis()
+        )
+        doc.set(data).await()
+        return doc.id
+    }
+
+    override suspend fun getPendingRequests(userId: String): List<ConnectionRequest> {
+        val snap = db.collection("connectionRequests")
+            .whereEqualTo("toUserId", userId)
+            .whereEqualTo("status", "pending")
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .await()
+        return snap.documents.mapNotNull { doc ->
+            val data = doc.data
+            ConnectionRequest(
+                id = doc.id,
+                fromUserId = data?.get("fromUserId") as? String ?: "",
+                toUserId = data?.get("toUserId") as? String ?: "",
+                status = data?.get("status") as? String ?: "pending",
+                timestamp = (data?.get("timestamp") as? Long) ?: 0L
+            )
+        }
+    }
+
+    override suspend fun getSentRequests(userId: String): List<ConnectionRequest> {
+        val snap = db.collection("connectionRequests")
+            .whereEqualTo("fromUserId", userId)
+            .whereEqualTo("status", "pending")
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .await()
+        return snap.documents.mapNotNull { doc ->
+            val data = doc.data
+            ConnectionRequest(
+                id = doc.id,
+                fromUserId = data?.get("fromUserId") as? String ?: "",
+                toUserId = data?.get("toUserId") as? String ?: "",
+                status = data?.get("status") as? String ?: "pending",
+                timestamp = (data?.get("timestamp") as? Long) ?: 0L
+            )
+        }
+    }
+
+    override suspend fun acceptConnectionRequest(requestId: String) {
+        val request = db.collection("connectionRequests").document(requestId).get().await()
+        val data = request.data
+        val fromUserId = data?.get("fromUserId") as? String ?: ""
+        val toUserId = data?.get("toUserId") as? String ?: ""
+        
+        if (fromUserId.isNotEmpty() && toUserId.isNotEmpty()) {
+            // İsteği accepted olarak işaretle
+            db.collection("connectionRequests").document(requestId)
+                .update("status", "accepted").await()
+            
+            // Batch write kullanarak her iki kullanıcının da connections listesini güncelle
+            // Not: Batch write'lar her işlem için ayrı security check yapar
+            // Bu yüzden sadece currentUser'ın (toUserId) kendi connections listesine ekleme yapabiliriz
+            // fromUserId'nin connections listesine ekleme yapamayız çünkü permission denied alırız
+            
+            // Sadece kabul eden kullanıcının (toUserId) connections listesine gönderen kullanıcıyı (fromUserId) ekle
+            addConnection(toUserId, fromUserId)
+            
+            // Gönderen kullanıcının (fromUserId) connections listesine kabul eden kullanıcı (toUserId) eklenemez
+            // çünkü currentUser (toUserId) başka bir kullanıcının (fromUserId) dokümanını güncelleyemez
+            // Bu işlem, fromUserId kullanıcısı profil yüklendiğinde veya başka bir şekilde güncellendiğinde yapılabilir
+        }
+    }
+
+    override suspend fun rejectConnectionRequest(requestId: String) {
+        db.collection("connectionRequests").document(requestId)
+            .update("status", "rejected").await()
+    }
+
+    override suspend fun cancelConnectionRequest(requestId: String) {
+        db.collection("connectionRequests").document(requestId)
+            .delete().await()
     }
 }
 
@@ -312,5 +457,90 @@ class FirestoreCommentRepository(
     
     override suspend fun deleteComment(commentId: String) {
         db.collection("comments").document(commentId).delete().await()
+    }
+}
+
+class FirestoreNotificationRepository(
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+) : NotificationRepository {
+    override suspend fun getNotifications(userId: String): List<Notification> {
+        val snap = db.collection("notifications")
+            .whereEqualTo("userId", userId)
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .await()
+        return snap.documents.mapNotNull { doc ->
+            val data = doc.data
+            Notification(
+                id = doc.id,
+                userId = data?.get("userId") as? String ?: "",
+                fromUserId = data?.get("fromUserId") as? String ?: "",
+                type = data?.get("type") as? String ?: "",
+                relatedId = data?.get("relatedId") as? String,
+                relatedType = data?.get("relatedType") as? String,
+                message = data?.get("message") as? String ?: "",
+                timestamp = (data?.get("timestamp") as? Long) ?: 0L,
+                isRead = (data?.get("isRead") as? Boolean) ?: false
+            )
+        }
+    }
+
+    override suspend fun getNotificationsByType(userId: String, type: String): List<Notification> {
+        val snap = db.collection("notifications")
+            .whereEqualTo("userId", userId)
+            .whereEqualTo("type", type)
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .await()
+        return snap.documents.mapNotNull { doc ->
+            val data = doc.data
+            Notification(
+                id = doc.id,
+                userId = data?.get("userId") as? String ?: "",
+                fromUserId = data?.get("fromUserId") as? String ?: "",
+                type = data?.get("type") as? String ?: "",
+                relatedId = data?.get("relatedId") as? String,
+                relatedType = data?.get("relatedType") as? String,
+                message = data?.get("message") as? String ?: "",
+                timestamp = (data?.get("timestamp") as? Long) ?: 0L,
+                isRead = (data?.get("isRead") as? Boolean) ?: false
+            )
+        }
+    }
+
+    override suspend fun createNotification(notification: Notification): String {
+        val doc = db.collection("notifications").document()
+        val data = hashMapOf(
+            "userId" to notification.userId,
+            "fromUserId" to notification.fromUserId,
+            "type" to notification.type,
+            "relatedId" to (notification.relatedId ?: ""),
+            "relatedType" to (notification.relatedType ?: ""),
+            "message" to notification.message,
+            "timestamp" to notification.timestamp,
+            "isRead" to notification.isRead
+        )
+        doc.set(data).await()
+        return doc.id
+    }
+
+    override suspend fun markAsRead(notificationId: String) {
+        db.collection("notifications").document(notificationId)
+            .update("isRead", true)
+            .await()
+    }
+
+    override suspend fun markAllAsRead(userId: String) {
+        val snap = db.collection("notifications")
+            .whereEqualTo("userId", userId)
+            .whereEqualTo("isRead", false)
+            .get()
+            .await()
+        
+        val batch = db.batch()
+        snap.documents.forEach { doc ->
+            batch.update(doc.reference, "isRead", true)
+        }
+        batch.commit().await()
     }
 }

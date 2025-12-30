@@ -5,7 +5,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.proto7hive.data.ConnectionRepository
 import com.example.proto7hive.data.FirestoreConnectionRepository
+import com.example.proto7hive.data.NotificationRepository
+import com.example.proto7hive.data.FirestoreNotificationRepository
+import com.example.proto7hive.data.UserRepository
+import com.example.proto7hive.data.FirestoreUserRepository
 import com.example.proto7hive.model.User
+import com.example.proto7hive.model.Notification
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +24,9 @@ data class ConnectionsUiState(
 )
 
 class ConnectionsViewModel(
-    private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository()
+    private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository(),
+    private val notificationRepository: NotificationRepository = FirestoreNotificationRepository(),
+    private val userRepository: UserRepository = FirestoreUserRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConnectionsUiState())
@@ -59,18 +66,43 @@ class ConnectionsViewModel(
         }
     }
 
-    fun addConnection(userId: String) {
+    fun sendConnectionRequest(targetUserId: String) {
         viewModelScope.launch {
             try {
                 val currentUser = FirebaseAuth.getInstance().currentUser ?: return@launch
-                connectionRepository.addConnection(currentUser.uid, userId)
+                
+                // İstek gönder
+                val requestId = connectionRepository.sendConnectionRequest(currentUser.uid, targetUserId)
+                
+                // İstek alan kullanıcıya bildirim gönder
+                val currentUserData = userRepository.getUser(currentUser.uid)
+                if (currentUserData != null) {
+                    val notification = Notification(
+                        id = "",
+                        userId = targetUserId, // İsteği alan kullanıcı
+                        fromUserId = currentUser.uid, // İsteği gönderen
+                        type = "FOLLOW_REQUEST",
+                        relatedId = requestId,
+                        relatedType = "connection_request",
+                        message = "${currentUserData.name} ${currentUserData.surname} sent you a connection request",
+                        timestamp = System.currentTimeMillis(),
+                        isRead = false
+                    )
+                    notificationRepository.createNotification(notification)
+                }
+                
                 loadConnections() // Refresh list
             } catch (t: Throwable) {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = t.message ?: "Bağlantı eklenirken hata oluştu"
+                    errorMessage = t.message ?: "Connection request gönderilirken hata oluştu"
                 )
             }
         }
+    }
+    
+    fun addConnection(userId: String) {
+        // Eski fonksiyon, geriye dönük uyumluluk için bırakıyoruz ama sendConnectionRequest'i kullanıyoruz
+        sendConnectionRequest(userId)
     }
 
     fun removeConnection(userId: String) {
@@ -93,12 +125,14 @@ class ConnectionsViewModel(
 }
 
 class ConnectionsViewModelFactory(
-    private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository()
+    private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository(),
+    private val notificationRepository: NotificationRepository = FirestoreNotificationRepository(),
+    private val userRepository: UserRepository = FirestoreUserRepository()
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ConnectionsViewModel::class.java)) {
-            return ConnectionsViewModel(connectionRepository) as T
+            return ConnectionsViewModel(connectionRepository, notificationRepository, userRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

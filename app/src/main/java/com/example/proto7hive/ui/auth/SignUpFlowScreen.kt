@@ -31,6 +31,10 @@ fun SignUpFlowScreen(
         )
         5 -> SignUpStep5Screen(
             viewModel = viewModel,
+            onNext = { viewModel.nextStep() }
+        )
+        6 -> SignUpStep6Screen(
+            viewModel = viewModel,
             onSignUpComplete = onSignUpComplete
         )
     }

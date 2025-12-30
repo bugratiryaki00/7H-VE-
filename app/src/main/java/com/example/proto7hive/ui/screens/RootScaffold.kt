@@ -45,6 +45,7 @@ import com.example.proto7hive.ui.auth.LoginScreen
 import com.example.proto7hive.ui.auth.SignUpFlowScreen
 import com.example.proto7hive.ui.auth.ForgotPasswordScreen
 import com.example.proto7hive.ui.comments.CommentsRoute
+import com.example.proto7hive.ui.notifications.NotificationRoute
 import com.example.proto7hive.ui.auth.AuthViewModel
 import com.example.proto7hive.ui.auth.AuthViewModelFactory
 import com.example.proto7hive.data.AuthRepository
@@ -76,6 +77,7 @@ object Routes {
     const val COMMENTS_POST = "comments/post/{postId}"
     const val COMMENTS_JOB = "comments/job/{jobId}"
     const val SEARCH = "search"
+    const val NOTIFICATIONS = "notifications"
 
     fun projectDetail(projectId: String) = "project/$projectId"
     fun postDetail(postId: String) = "post/$postId"
@@ -107,7 +109,8 @@ fun RootScaffold() {
                 Routes.COMMENTS_POST,
                 Routes.COMMENTS_JOB,
                 Routes.PROFILE_SETTINGS,
-                Routes.SEARCH
+                Routes.SEARCH,
+                Routes.NOTIFICATIONS
             )) {
                 BottomBar(
                     navController = navController,
@@ -192,6 +195,12 @@ fun RootScaffold() {
                     onNavigateToSettings = {
                         navController.navigate(Routes.PROFILE_SETTINGS)
                     },
+                    onNavigateToSearch = {
+                        navController.navigate(Routes.SEARCH)
+                    },
+                    onNavigateToNotifications = {
+                        navController.navigate(Routes.NOTIFICATIONS)
+                    },
                     refreshKey = profileRefreshKey
                 ) 
             }
@@ -214,6 +223,9 @@ fun RootScaffold() {
             }
             composable(Routes.SEARCH) {
                 SearchScreen(navController = navController)
+            }
+            composable(Routes.NOTIFICATIONS) {
+                NotificationRoute(navController = navController)
             }
             composable(
                 route = Routes.COMMENTS_POST,
@@ -260,6 +272,9 @@ fun RootScaffold() {
                         },
                         onNavigateToSearch = {
                             navController.navigate(Routes.SEARCH)
+                        },
+                        onNavigateToNotifications = {
+                            navController.navigate(Routes.NOTIFICATIONS)
                         }
                     )
                 }
@@ -282,6 +297,9 @@ fun RootScaffold() {
                         },
                         onNavigateToSearch = {
                             navController.navigate(Routes.SEARCH)
+                        },
+                        onNavigateToNotifications = {
+                            navController.navigate(Routes.NOTIFICATIONS)
                         }
                     )
                 }
@@ -358,36 +376,47 @@ private fun BottomBar(
                             contentScale = ContentScale.Fit
                         )
                     } else if (route == Routes.PROFILE) {
-                        // Profile icon - profil resmi varsa göster, yoksa default icon
+                        // Profile icon - profil resmi varsa göster, yoksa default icon (ProfileScreen ile aynı yapı)
                         val borderColor = if (isSelected) com.example.proto7hive.ui.theme.BrandYellow else Color.Black
                         Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .border(
-                                    width = 2.dp,
-                                    color = borderColor,
-                                    shape = CircleShape
-                                )
-                                .clip(CircleShape)
-                                .background(com.example.proto7hive.ui.theme.BrandBackgroundDark),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (currentUser?.profileImageUrl != null && currentUser?.profileImageUrl?.isNotBlank() == true) {
-                                AsyncImage(
-                                    model = "${currentUser!!.profileImageUrl}?v=${currentUserId}", // Cache bypass için version parametresi
-                                    contentDescription = contentDesc,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = contentDesc,
-                                    tint = iconColor,
-                                    modifier = Modifier.size(16.dp)
-                                )
+                            // Outer border circle (24dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .border(
+                                        width = 2.dp,
+                                        color = borderColor,
+                                        shape = CircleShape
+                                    )
+                            )
+                            
+                            // Inner profile image (20dp to account for 2dp border on each side)
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(CircleShape)
+                                    .background(com.example.proto7hive.ui.theme.BrandBackgroundDark),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (currentUser?.profileImageUrl != null && currentUser?.profileImageUrl?.isNotBlank() == true) {
+                                    AsyncImage(
+                                        model = currentUser!!.profileImageUrl, // ProfileScreen'deki gibi direkt URL
+                                        contentDescription = contentDesc,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = contentDesc,
+                                        tint = iconColor,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
                             }
                         }
                     } else if (iconVector != null) {

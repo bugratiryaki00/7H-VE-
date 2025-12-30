@@ -1,10 +1,12 @@
 package com.example.proto7hive.ui.auth
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proto7hive.data.AuthRepository
 import com.example.proto7hive.data.AuthResult
 import com.example.proto7hive.data.FirestoreUserRepository
+import com.example.proto7hive.data.StorageRepository
 import com.example.proto7hive.data.UserRepository
 import com.example.proto7hive.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +30,10 @@ data class SignUpUiState(
     // Step 4: Date of Birth
     val dateOfBirth: Long? = null, // Unix timestamp
     
-    // Step 5: Password
+    // Step 5: Profile Image
+    val profileImageUri: Uri? = null, // Seçilen görsel URI'si (henüz yüklenmemiş)
+    
+    // Step 6: Password
     val password: String = "",
     
     // General
@@ -40,7 +45,8 @@ data class SignUpUiState(
 
 class SignUpViewModel(
     private val authRepository: AuthRepository = AuthRepository(),
-    private val userRepository: UserRepository = FirestoreUserRepository()
+    private val userRepository: UserRepository = FirestoreUserRepository(),
+    private val storageRepository: StorageRepository = StorageRepository()
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(SignUpUiState())
@@ -78,9 +84,13 @@ class SignUpViewModel(
         _uiState.value = _uiState.value.copy(password = password)
     }
     
+    fun setProfileImage(uri: Uri) {
+        _uiState.value = _uiState.value.copy(profileImageUri = uri)
+    }
+    
     fun nextStep() {
         val current = _uiState.value.currentStep
-        if (current < 5) {
+        if (current < 6) {
             _uiState.value = _uiState.value.copy(currentStep = current + 1, errorMessage = null)
         }
     }
@@ -139,7 +149,18 @@ class SignUpViewModel(
                 val firebaseUser = authResult.user
                 val userId = firebaseUser.uid
                 
-                // 2. Firestore'a user dokümanı oluştur
+                // 2. Profil resmini yükle (varsa)
+                var profileImageUrl: String? = null
+                if (state.profileImageUri != null) {
+                    try {
+                        profileImageUrl = storageRepository.uploadProfileImage(state.profileImageUri)
+                    } catch (e: Exception) {
+                        android.util.Log.w("SignUpViewModel", "Profil resmi yüklenemedi: ${e.message}")
+                        // Profil resmi yüklenemese bile signup devam eder
+                    }
+                }
+                
+                // 3. Firestore'a user dokümanı oluştur
                 try {
                     val user = User(
                         id = userId,
@@ -155,7 +176,7 @@ class SignUpViewModel(
                         badges = emptyList(),
                         availability = null,
                         connections = emptyList(),
-                        profileImageUrl = null,
+                        profileImageUrl = profileImageUrl,
                         bio = null
                     )
                     
@@ -172,7 +193,7 @@ class SignUpViewModel(
                     return@launch
                 }
                 
-                // 3. Email verification gönder (herhangi bir email için çalışır)
+                // 4. Email verification gönder (herhangi bir email için çalışır)
                 try {
                     val verificationResult = authRepository.sendEmailVerification()
                     if (!verificationResult.success) {
@@ -184,7 +205,7 @@ class SignUpViewModel(
                     android.util.Log.w("SignUpViewModel", "Email verification hatası: ${e.message}")
                 }
                 
-                // 4. Başarılı - signup tamamlandı
+                // 5. Başarılı - signup tamamlandı
                 android.util.Log.d("SignUpViewModel", "Signup başarılı, isSignUpComplete = true yapılıyor")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

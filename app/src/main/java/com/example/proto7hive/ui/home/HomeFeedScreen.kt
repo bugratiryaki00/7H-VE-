@@ -39,6 +39,8 @@ import com.example.proto7hive.ui.components.SearchBar
 import com.example.proto7hive.ui.screens.Routes
 import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
+import com.example.proto7hive.ui.notifications.NotificationViewModel
+import com.example.proto7hive.ui.notifications.NotificationViewModelFactory
 import com.example.proto7hive.R
 import java.text.SimpleDateFormat
 import java.util.*
@@ -56,13 +58,20 @@ fun HomeFeedRoute(
         )
     )
     
+    // Notification ViewModel for unread count
+    val notificationViewModel: NotificationViewModel = viewModel(
+        factory = NotificationViewModelFactory()
+    )
+    
     // İlk yüklemede refresh et
     LaunchedEffect(Unit) {
         viewModel.refresh()
+        notificationViewModel.refresh()
     }
     
     HomeFeedScreen(
         viewModel = viewModel,
+        notificationViewModel = notificationViewModel,
         navController = navController
     )
 }
@@ -70,9 +79,11 @@ fun HomeFeedRoute(
 @Composable
 fun HomeFeedScreen(
     viewModel: HomeFeedViewModel,
+    notificationViewModel: NotificationViewModel,
     navController: NavController? = null
 ) {
     val state by viewModel.uiState.collectAsState()
+    val notificationState by notificationViewModel.uiState.collectAsState()
     
     Column(
         modifier = Modifier
@@ -101,7 +112,11 @@ fun HomeFeedScreen(
             onSearchClick = {
                 navController?.navigate(com.example.proto7hive.ui.screens.Routes.SEARCH)
             },
-            onNotificationClick = { }
+            onNotificationClick = {
+                navController?.navigate(com.example.proto7hive.ui.screens.Routes.NOTIFICATIONS)
+            },
+            unreadCount = notificationState.unreadCount,
+            isInNotificationScreen = false
         )
         
         // Content Area - Post Feed - Kalan tüm alanı kaplar, navbar'ın üstüne kadar
@@ -145,6 +160,7 @@ fun HomeFeedScreen(
                         PostCard(
                             post = post,
                             user = user,
+                            viewModel = viewModel,
                             onCommentClick = {
                                 if (navController != null && post.id.isNotEmpty()) {
                                     navController.navigate(Routes.commentsPost(post.id))
@@ -167,10 +183,13 @@ fun HomeFeedScreen(
 fun PostCard(
     post: com.example.proto7hive.model.Post,
     user: com.example.proto7hive.model.User?,
+    viewModel: HomeFeedViewModel? = null,
     onCommentClick: () -> Unit = {},
     onUserClick: () -> Unit = {}
 ) {
-    var isLiked by remember { mutableStateOf(false) }
+    val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+    val isLiked = currentUserId != null && post.likes.contains(currentUserId)
+    val likeCount = post.likes.size
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -292,7 +311,15 @@ fun PostCard(
             ) {
                 // Like Button
                 Row(
-                    modifier = Modifier.clickable { isLiked = !isLiked },
+                    modifier = Modifier.clickable(enabled = viewModel != null) { 
+                        viewModel?.let {
+                            if (isLiked) {
+                                it.unlikePost(post.id)
+                            } else {
+                                it.likePost(post.id)
+                            }
+                        }
+                    },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
@@ -303,7 +330,7 @@ fun PostCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Beğen",
+                        text = if (likeCount > 0) "$likeCount Beğeni" else "Beğen",
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (isLiked) BrandYellow else Color.White.copy(alpha = 0.7f)
                     )

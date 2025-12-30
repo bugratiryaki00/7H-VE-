@@ -4,6 +4,7 @@ import com.example.proto7hive.model.Announcement
 import com.example.proto7hive.model.Comment
 import com.example.proto7hive.model.Job
 import com.example.proto7hive.model.MatchSuggestion
+import com.example.proto7hive.model.Notification
 import com.example.proto7hive.model.PortfolioCard
 import com.example.proto7hive.model.Post
 import com.example.proto7hive.model.Project
@@ -34,6 +35,9 @@ interface PostRepository {
     suspend fun getPostsByUserId(userId: String): List<Post> // Kullanıcının kendi postları için
     suspend fun createPost(post: Post): String // Yeni post oluştur (döner: postId)
     suspend fun searchPosts(query: String): List<Post> // İçerik metnine göre arama
+    suspend fun likePost(postId: String, userId: String): Unit // Post'u beğen
+    suspend fun unlikePost(postId: String, userId: String): Unit // Post beğenisini kaldır
+    suspend fun getPost(postId: String): Post? // Tek bir post getir
 }
 
 interface UserRepository {
@@ -46,10 +50,18 @@ interface UserRepository {
 
 interface ConnectionRepository {
     suspend fun getConnections(userId: String): List<String> // Kullanıcının bağlantı ID'leri
-    suspend fun addConnection(userId: String, connectionUserId: String): Unit // Bağlantı ekle
-    suspend fun removeConnection(userId: String, connectionUserId: String): Unit // Bağlantı çıkar
+    suspend fun addConnection(userId: String, connectionUserId: String): Unit // Bağlantı ekle (karşılıklı)
+    suspend fun removeConnection(userId: String, connectionUserId: String): Unit // Bağlantı çıkar (karşılıklı)
     suspend fun getConnectionUsers(userId: String): List<User> // Bağlantı yapılan kullanıcı bilgileri
     suspend fun getSuggestedConnections(userId: String): List<User> // Önerilen bağlantılar (basit: connections'ı olmayanlar)
+    
+    // Connection Request fonksiyonları
+    suspend fun sendConnectionRequest(fromUserId: String, toUserId: String): String // İstek gönder (döner: requestId)
+    suspend fun getPendingRequests(userId: String): List<com.example.proto7hive.model.ConnectionRequest> // Bekleyen istekleri getir (userId'ye gelen)
+    suspend fun getSentRequests(userId: String): List<com.example.proto7hive.model.ConnectionRequest> // Gönderilen istekleri getir
+    suspend fun acceptConnectionRequest(requestId: String): Unit // İsteği kabul et ve connection oluştur
+    suspend fun rejectConnectionRequest(requestId: String): Unit // İsteği reddet
+    suspend fun cancelConnectionRequest(requestId: String): Unit // Gönderilen isteği iptal et
 }
 
 interface JobRepository {
@@ -68,6 +80,14 @@ interface CommentRepository {
     suspend fun getCommentsByJobId(jobId: String): List<Comment>
     suspend fun createComment(comment: Comment): String // Yeni yorum oluştur (döner: commentId)
     suspend fun deleteComment(commentId: String): Unit // Yorum sil
+}
+
+interface NotificationRepository {
+    suspend fun getNotifications(userId: String): List<Notification> // Tüm bildirimler
+    suspend fun getNotificationsByType(userId: String, type: String): List<Notification> // Tip'e göre bildirimler
+    suspend fun createNotification(notification: Notification): String // Yeni bildirim oluştur
+    suspend fun markAsRead(notificationId: String): Unit // Bildirimi okundu olarak işaretle
+    suspend fun markAllAsRead(userId: String): Unit // Tüm bildirimleri okundu olarak işaretle
 }
 
 class MockPortfolioRepository : PortfolioRepository {

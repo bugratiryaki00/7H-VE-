@@ -33,7 +33,17 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Post sahibi tüm field'ları güncelleyebilir/silebilir
+      // Herkes sadece likes field'ını güncelleyebilir (beğeni için)
+      allow update: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||  // Post sahibi her şeyi güncelleyebilir
+        (request.resource.data.userId == resource.data.userId &&  // userId değiştirilemez
+         request.resource.data.text == resource.data.text &&  // text değiştirilemez
+         request.resource.data.imageUrl == resource.data.imageUrl &&  // imageUrl değiştirilemez
+         request.resource.data.timestamp == resource.data.timestamp &&  // timestamp değiştirilemez
+         request.resource.data.postType == resource.data.postType)  // postType değiştirilemez (sadece likes güncellenebilir)
+      );
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
     // Jobs koleksiyonu - Giriş yapanlar okuyabilir, kendi işlerini oluşturabilir
@@ -49,6 +59,34 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
+    
+    // Notifications koleksiyonu - Kullanıcılar kendi bildirimlerini okuyabilir/güncelleyebilir
+    match /notifications/{notificationId} {
+      // Kullanıcı kendi bildirimlerini okuyabilir (userId kontrolü ile)
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Herkes bildirim oluşturabilir (başkaları kullanıcıya bildirim gönderebilir)
+      allow create: if request.auth != null;
+      // Kullanıcı kendi bildirimlerini güncelleyebilir (okundu olarak işaretleme)
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Bildirimler silinemez
+      allow delete: if false;
+    }
+    
+    // Connection Requests koleksiyonu - Bağlantı istekleri
+    match /connectionRequests/{requestId} {
+      // Kullanıcı kendine gelen istekleri okuyabilir (toUserId kontrolü ile)
+      // Kullanıcı gönderdiği istekleri okuyabilir (fromUserId kontrolü ile)
+      allow read: if request.auth != null && (
+        resource.data.toUserId == request.auth.uid ||
+        resource.data.fromUserId == request.auth.uid
+      );
+      // Herkes istek oluşturabilir
+      allow create: if request.auth != null && request.resource.data.fromUserId == request.auth.uid;
+      // Kullanıcı kendine gelen istekleri güncelleyebilir (kabul/reddet için)
+      allow update: if request.auth != null && resource.data.toUserId == request.auth.uid;
+      // Kullanıcı gönderdiği istekleri silebilir (iptal için)
+      allow delete: if request.auth != null && resource.data.fromUserId == request.auth.uid;
+    }
   }
 }
 ```
@@ -59,13 +97,18 @@ service cloud.firestore {
 - ✅ `posts` - Post'lar (postType: "post" veya "work")
 - ✅ `jobs` - İş ilanları
 - ✅ `comments` - Yorumlar (post ve job'lar için)
+- ✅ `notifications` - Bildirimler (COMMENT, FOLLOW_REQUEST, INVITE)
+- ✅ `connectionRequests` - Bağlantı istekleri (pending, accepted, rejected)
 - ❌ `projects` - **Kaldırıldı** (artık kullanılmıyor)
 
 ## Güvenlik Açıklaması
 
 - **read**: Tüm giriş yapan kullanıcılar okuyabilir
 - **create**: Kullanıcı sadece kendi dokümanını oluşturabilir (`userId` kontrolü ile)
-- **update/delete**: Kullanıcı sadece kendi dokümanını güncelleyebilir/silebilir
+- **update**: 
+  - Post sahibi tüm field'ları güncelleyebilir
+  - Herkes sadece `likes` field'ını güncelleyebilir (beğeni için, diğer field'lar değiştirilemez)
+- **delete**: Kullanıcı sadece kendi dokümanını silebilir
 - **users delete**: Kullanıcı kendi user dokümanını silemez (güvenlik için)
 
 ## Test İçin Basit Kurallar (Geçici - Güvenlik Açığı Var!)

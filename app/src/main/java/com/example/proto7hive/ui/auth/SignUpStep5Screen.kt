@@ -1,67 +1,106 @@
 package com.example.proto7hive.ui.auth
 
+import android.Manifest
+import android.net.Uri
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
+import java.io.File
+import java.util.UUID
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.proto7hive.R
 import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandText
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+import com.example.proto7hive.ui.theme.BrandYellow
 
 @Composable
 fun SignUpStep5Screen(
     viewModel: SignUpViewModel,
-    onSignUpComplete: () -> Unit
+    onNext: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
-    var passwordVisible by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
     
-    // Handle sign up completion
-    LaunchedEffect(state.isSignUpComplete) {
-        if (state.isSignUpComplete) {
-            onSignUpComplete()
+    // Temporary file for camera (using external cache for FileProvider compatibility)
+    val photoFile = remember {
+        val cacheDir = context.externalCacheDir ?: context.cacheDir
+        File(cacheDir, "temp_photo_${UUID.randomUUID()}.jpg")
+    }
+    val photoUri = remember(photoFile) {
+        try {
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                photoFile
+            )
+        } catch (e: Exception) {
+            Log.e("SignUpStep5Screen", "FileProvider hatası: ${e.message}", e)
+            android.net.Uri.EMPTY
         }
     }
     
-    // Handle error messages
-    LaunchedEffect(state.errorMessage) {
-        state.errorMessage?.let { error ->
-            snackbarHostState.showSnackbar(error)
-            viewModel.clearError()
+    // Gallery launcher
+    val pickMedia = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        uri?.let { selectedUri ->
+            viewModel.setProfileImage(selectedUri)
+        }
+    }
+    
+    // Camera launcher
+    val takePicture = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            viewModel.setProfileImage(photoUri)
+        }
+    }
+    
+    // Camera permission launcher
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted && photoUri != android.net.Uri.EMPTY) {
+            takePicture.launch(photoUri)
         }
     }
     
@@ -73,74 +112,109 @@ fun SignUpStep5Screen(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp),
+                .fillMaxSize()
+                .padding(horizontal = 32.dp, vertical = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
-            // Title
-            Text(
-                text = "Enter Password",
-                color = BrandText,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 32.dp)
-            )
-            
-            // Password Input
-            OutlinedTextField(
-                value = state.password,
-                onValueChange = { viewModel.updatePassword(it) },
-                placeholder = {
-                    Text(
-                        text = "Enter Password",
-                        color = Color(0xFF999999)
-                    )
-                },
-                singleLine = true,
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = BrandText,
-                    unfocusedTextColor = BrandText,
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.White,
-                    focusedPlaceholderColor = Color(0xFF999999),
-                    unfocusedPlaceholderColor = Color(0xFF999999),
-                    cursorColor = BrandText
-                ),
-                shape = RoundedCornerShape(8.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Next Button
-            val isFormValid = state.password.isNotEmpty()
-            
+            // Profile Picture Preview
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .background(
-                        color = if (isFormValid) Color(0xFFCCCCCC) else Color(0xFF888888),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .clickable {
-                        if (isFormValid && !state.isLoading) {
-                            viewModel.completeSignUp()
-                        }
-                    },
+                modifier = Modifier.size(120.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (state.isLoading) {
-                    androidx.compose.material3.CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = BrandBackgroundDark
-                    )
-                } else {
+                // Outer circle with border
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .border(
+                            width = 2.dp,
+                            color = BrandYellow,
+                            shape = CircleShape
+                        )
+                )
+                
+                // Inner profile image
+                Box(
+                    modifier = Modifier
+                        .size(116.dp)
+                        .clip(CircleShape)
+                        .background(BrandBackgroundDark),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (state.profileImageUri != null) {
+                        AsyncImage(
+                            model = state.profileImageUri,
+                            contentDescription = "Profile Picture",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile",
+                            tint = BrandYellow,
+                            modifier = Modifier.size(60.dp)
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(48.dp))
+            
+            // Add and Take Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Add Button
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .background(
+                            color = Color(0xFFCCCCCC),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable {
+                            pickMedia.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text = "Next",
+                        text = "Add",
+                        color = BrandBackgroundDark,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                // Take Button
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .background(
+                            color = Color(0xFFCCCCCC),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable {
+                            if (photoUri != android.net.Uri.EMPTY) {
+                                // Request camera permission first
+                                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Take",
                         color = BrandBackgroundDark,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
@@ -148,7 +222,44 @@ fun SignUpStep5Screen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.weight(1f))
+            
+            // Confirm Button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .background(
+                        color = Color(0xFFCCCCCC),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .clickable {
+                        onNext()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Confirm",
+                    color = BrandBackgroundDark,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Skip Text
+            Text(
+                text = "Skip",
+                color = BrandText,
+                fontSize = 16.sp,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier.clickable {
+                    onNext()
+                }
+            )
+            
+            Spacer(modifier = Modifier.height(80.dp))
             
             // Logo at bottom
             Image(
@@ -157,12 +268,5 @@ fun SignUpStep5Screen(
                 modifier = Modifier.size(120.dp)
             )
         }
-        
-        // Snackbar for error messages
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
     }
 }
-
