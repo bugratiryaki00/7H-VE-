@@ -40,7 +40,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.proto7hive.R
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 
 @Composable
@@ -89,7 +88,7 @@ fun CreatePostScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Top Bar: X | Logo | Share Button - Üstte, minimal padding
         Row(
@@ -183,7 +182,7 @@ fun CreatePostScreen(
                     onClick = { viewModel.setPostType("post") },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (state.postType == "post") BrandYellow else Color(0xFF404040),
+                        containerColor = if (state.postType == "post") BrandYellow else MaterialTheme.colorScheme.surface,
                         contentColor = if (state.postType == "post") Color.Black else Color.White
                     ),
                     shape = RoundedCornerShape(8.dp)
@@ -199,7 +198,7 @@ fun CreatePostScreen(
                     onClick = { viewModel.setPostType("work") },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (state.postType == "work") BrandYellow else Color(0xFF404040),
+                        containerColor = if (state.postType == "work") BrandYellow else MaterialTheme.colorScheme.surface,
                         contentColor = if (state.postType == "work") Color.Black else Color.White
                     ),
                     shape = RoundedCornerShape(8.dp)
@@ -229,7 +228,7 @@ fun CreatePostScreen(
                         .fillMaxWidth()
                         .weight(1f),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF404040) // Gri renk tonu
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -262,21 +261,21 @@ fun CreatePostScreen(
                                 placeholder = {
                                     Text(
                                         text = "What do you want to share",
-                                        color = Color.White.copy(alpha = 0.5f)
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                     )
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(min = 100.dp),
                                 colors = TextFieldDefaults.colors(
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     cursorColor = BrandYellow,
                                     focusedIndicatorColor = Color.Transparent,
                                     unfocusedIndicatorColor = Color.Transparent,
                                     disabledIndicatorColor = Color.Transparent,
-                                    focusedContainerColor = Color(0xFF404040),
-                                    unfocusedContainerColor = Color(0xFF404040)
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
                                 ),
                                 keyboardOptions = KeyboardOptions(
                                     capitalization = KeyboardCapitalization.Sentences,
@@ -401,18 +400,18 @@ private fun WorkFormContent(
         // Tab Row
         TabRow(
             selectedTabIndex = selectedTab,
-            containerColor = BrandBackgroundDark,
+            containerColor = MaterialTheme.colorScheme.background,
             contentColor = BrandYellow
         ) {
             Tab(
                 selected = selectedTab == 0,
                 onClick = { selectedTab = 0 },
-                text = { Text("Basic Information", color = if (selectedTab == 0) BrandYellow else Color.White.copy(alpha = 0.7f)) }
+                text = { Text("Basic Information", color = if (selectedTab == 0) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) }
             )
             Tab(
                 selected = selectedTab == 1,
                 onClick = { selectedTab = 1 },
-                text = { Text("Description & Photo", color = if (selectedTab == 1) BrandYellow else Color.White.copy(alpha = 0.7f)) }
+                text = { Text("Description & Photo", color = if (selectedTab == 1) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) }
             )
         }
 
@@ -534,7 +533,7 @@ private fun WorkBasicInfoTab(
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.background(Color(0xFF2A2A2A))
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
             ) {
                 workTypes.forEach { type ->
                     DropdownMenuItem(
@@ -552,7 +551,7 @@ private fun WorkBasicInfoTab(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF2A2A2A)
+                containerColor = MaterialTheme.colorScheme.surface
             ),
             shape = RoundedCornerShape(12.dp)
         ) {
@@ -662,7 +661,7 @@ private fun WorkDescriptionAndImageTab(
             .fillMaxSize()
             .padding(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF404040)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -689,14 +688,14 @@ private fun WorkDescriptionAndImageTab(
                         .fillMaxWidth()
                         .heightIn(min = 120.dp),
                     colors = TextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         cursorColor = BrandYellow,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         disabledIndicatorColor = Color.Transparent,
-                        focusedContainerColor = Color(0xFF404040),
-                        unfocusedContainerColor = Color(0xFF404040)
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
                     ),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,

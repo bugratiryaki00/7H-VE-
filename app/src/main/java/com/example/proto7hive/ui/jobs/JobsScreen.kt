@@ -38,7 +38,6 @@ import com.example.proto7hive.model.Job
 import com.example.proto7hive.model.User
 import com.example.proto7hive.ui.components.SearchBar
 import com.example.proto7hive.ui.screens.Routes
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 
 @Composable
@@ -64,7 +63,7 @@ fun JobsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header with Logo - Üstte, minimal padding
         Row(
@@ -104,7 +103,7 @@ fun JobsScreen(
                 ) {
                     Text(
                         text = "Hata: ${state.errorMessage}",
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     TextButton(onClick = { viewModel.refresh() }) {
@@ -124,14 +123,14 @@ fun JobsScreen(
                             Text(
                                 text = "Job interests for you!",
                                 style = MaterialTheme.typography.headlineSmall,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
                             )
                             Text(
                                 text = "Take a look at these job opportunities that we chose for you.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
                             )
 
@@ -139,7 +138,7 @@ fun JobsScreen(
                                 Text(
                                     text = "Henüz önerilen iş yok",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White.copy(alpha = 0.5f),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
                                 )
                             } else {
@@ -172,7 +171,7 @@ fun JobsScreen(
                             Text(
                                 text = "Saved jobs",
                                 style = MaterialTheme.typography.headlineSmall,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
                             )
@@ -181,7 +180,7 @@ fun JobsScreen(
                                 Text(
                                     text = "Henüz kaydedilmiş iş yok",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White.copy(alpha = 0.5f),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
                                 )
                             } else {
@@ -235,7 +234,7 @@ fun JobCard(
                 }
             ),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF212121)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -293,7 +292,7 @@ fun JobCard(
                 Text(
                     text = if (job.company.isNotBlank()) "${job.title} – ${job.company}" else job.title,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 4.dp),
                     maxLines = 2,
@@ -322,19 +321,19 @@ fun JobCard(
                         Text(
                             text = job.location,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }
                     if (job.workType.isNotBlank()) {
                         Text(
                             text = "•",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.5f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                         Text(
                             text = job.workType,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -353,7 +352,7 @@ fun JobCard(
                     Icon(
                         imageVector = if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                         contentDescription = if (isSaved) "Kaydı kaldır" else "Kaydet",
-                        tint = if (isSaved) BrandYellow else Color.White.copy(alpha = 0.7f),
+                        tint = if (isSaved) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -366,7 +365,7 @@ fun JobCard(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Kaldır",
-                        tint = Color.White.copy(alpha = 0.7f),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         modifier = Modifier.size(20.dp)
                     )
                 }

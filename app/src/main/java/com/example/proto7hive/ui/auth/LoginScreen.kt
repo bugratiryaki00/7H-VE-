@@ -19,6 +19,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,7 +44,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proto7hive.R
 import com.example.proto7hive.data.AuthRepository
 import com.example.proto7hive.ui.components.CustomLoadingIndicator
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandText
 import com.example.proto7hive.ui.theme.BrandYellow
 
@@ -89,7 +89,7 @@ fun LoginScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(BrandBackgroundDark),
+                .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -189,7 +189,7 @@ fun LoginScreen(
             ) {
                 Text(
                     text = "Submit",
-                    color = BrandBackgroundDark,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )

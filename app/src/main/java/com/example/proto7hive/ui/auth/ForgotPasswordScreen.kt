@@ -19,6 +19,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,7 +41,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proto7hive.R
 import com.example.proto7hive.data.AuthRepository
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandText
 import com.example.proto7hive.ui.theme.BrandYellow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -115,7 +115,7 @@ fun ForgotPasswordScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -193,19 +193,19 @@ fun ForgotPasswordScreen(
                 if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = BrandBackgroundDark
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 } else if (state.isEmailSent) {
                     Text(
                         text = "Email Sent",
-                        color = BrandBackgroundDark,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
                 } else {
                     Text(
                         text = "Send Reset Link",
-                        color = BrandBackgroundDark,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )

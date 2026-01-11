@@ -13,6 +13,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,7 +38,6 @@ import com.example.proto7hive.ui.connections.ConnectionsRoute
 import com.example.proto7hive.ui.createpost.CreatePostRoute
 import com.example.proto7hive.ui.jobs.JobsRoute
 import com.example.proto7hive.ui.profile.ProfileRoute
-import com.example.proto7hive.ui.profile.ProfileSettingsRoute
 import com.example.proto7hive.ui.profile.UserProfileRoute
 import com.example.proto7hive.ui.search.SearchScreen
 import com.example.proto7hive.ui.auth.WelcomeScreen
@@ -46,6 +46,7 @@ import com.example.proto7hive.ui.auth.SignUpFlowScreen
 import com.example.proto7hive.ui.auth.ForgotPasswordScreen
 import com.example.proto7hive.ui.comments.CommentsRoute
 import com.example.proto7hive.ui.notifications.NotificationRoute
+import com.example.proto7hive.ui.settings.SettingsRoute
 import com.example.proto7hive.ui.auth.AuthViewModel
 import com.example.proto7hive.ui.auth.AuthViewModelFactory
 import com.example.proto7hive.data.AuthRepository
@@ -66,7 +67,6 @@ object Routes {
     const val CREATE_POST = "create_post" // Announcements yerine
     const val JOBS = "jobs" // Matches yerine
     const val PROFILE = "profile"
-    const val PROFILE_SETTINGS = "profile_settings"
     const val USER_PROFILE = "user/{userId}"
     const val USER_PROFILE_WITH_JOB = "user/{userId}/job/{jobId}"
     
@@ -78,6 +78,7 @@ object Routes {
     const val COMMENTS_JOB = "comments/job/{jobId}"
     const val SEARCH = "search"
     const val NOTIFICATIONS = "notifications"
+    const val SETTINGS = "settings"
 
     fun projectDetail(projectId: String) = "project/$projectId"
     fun postDetail(postId: String) = "post/$postId"
@@ -89,7 +90,10 @@ object Routes {
 }
 
 @Composable
-fun RootScaffold() {
+fun RootScaffold(
+    onThemeChange: (Boolean) -> Unit = {},
+    isDarkTheme: Boolean = true
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -108,14 +112,15 @@ fun RootScaffold() {
                 Routes.FORGOT_PASSWORD,
                 Routes.COMMENTS_POST,
                 Routes.COMMENTS_JOB,
-                Routes.PROFILE_SETTINGS,
+                Routes.SETTINGS,
                 Routes.SEARCH,
                 Routes.NOTIFICATIONS
             )) {
                 BottomBar(
                     navController = navController,
                     currentRoute = currentRoute,
-                    currentUserId = authState.user?.uid
+                    currentUserId = authState.user?.uid,
+                    isDarkTheme = isDarkTheme
                 ) 
             }
         }
@@ -193,7 +198,7 @@ fun RootScaffold() {
                         } 
                     },
                     onNavigateToSettings = {
-                        navController.navigate(Routes.PROFILE_SETTINGS)
+                        navController.navigate(Routes.SETTINGS)
                     },
                     onNavigateToSearch = {
                         navController.navigate(Routes.SEARCH)
@@ -204,14 +209,33 @@ fun RootScaffold() {
                     refreshKey = profileRefreshKey
                 ) 
             }
-            composable(Routes.PROFILE_SETTINGS) {
-                ProfileSettingsRoute(
+            composable(Routes.SEARCH) {
+                SearchScreen(navController = navController)
+            }
+            composable(Routes.NOTIFICATIONS) {
+                NotificationRoute(navController = navController)
+            }
+            composable(Routes.SETTINGS) {
+                SettingsRoute(
                     onBack = {
                         navController.popBackStack()
                     },
-                    onProfileUpdated = {
-                        profileRefreshKey++ // ProfileRoute'u refresh etmek için key'i artır
-                        navController.popBackStack()
+                    onNavigateToAccountInformation = {
+                        // TODO: Account Information ekranı eklenecek
+                    },
+                    onNavigateToSecurity = {
+                        // TODO: Security ekranı eklenecek
+                    },
+                    onNavigateToNotifications = {
+                        navController.navigate(Routes.NOTIFICATIONS)
+                    },
+                    onThemeChange = onThemeChange,
+                    isDarkTheme = isDarkTheme,
+                    onNavigateToLanguage = {
+                        // TODO: Language ekranı eklenecek
+                    },
+                    onNavigateToAbout = {
+                        // TODO: About ekranı eklenecek
                     },
                     onLogout = {
                         authViewModel.signOut()
@@ -220,12 +244,6 @@ fun RootScaffold() {
                         }
                     }
                 )
-            }
-            composable(Routes.SEARCH) {
-                SearchScreen(navController = navController)
-            }
-            composable(Routes.NOTIFICATIONS) {
-                NotificationRoute(navController = navController)
             }
             composable(
                 route = Routes.COMMENTS_POST,
@@ -312,7 +330,8 @@ fun RootScaffold() {
 private fun BottomBar(
     navController: NavHostController,
     currentRoute: String?,
-    currentUserId: String?
+    currentUserId: String?,
+    isDarkTheme: Boolean = true
 ) {
     val items = listOf(
         Routes.HOME,
@@ -334,7 +353,7 @@ private fun BottomBar(
     }
     
     Surface(
-        color = com.example.proto7hive.ui.theme.BrandBackgroundDark,
+        color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -358,7 +377,11 @@ private fun BottomBar(
                         (currentRoute != null && (currentRoute.startsWith("user/") || currentRoute == Routes.PROFILE))
                     else -> currentRoute == route
                 }
-                val iconColor = if (isSelected) com.example.proto7hive.ui.theme.BrandYellow else Color.White
+                val iconColor = if (isSelected) {
+                    com.example.proto7hive.ui.theme.BrandYellow
+                } else {
+                    if (isDarkTheme) Color.White else Color(0xFF363636)
+                }
                 
                 Column(
                     modifier = Modifier
@@ -377,7 +400,11 @@ private fun BottomBar(
                         )
                     } else if (route == Routes.PROFILE) {
                         // Profile icon - profil resmi varsa göster, yoksa default icon (ProfileScreen ile aynı yapı)
-                        val borderColor = if (isSelected) com.example.proto7hive.ui.theme.BrandYellow else Color.Black
+                        val borderColor = if (isSelected) {
+                            com.example.proto7hive.ui.theme.BrandYellow
+                        } else {
+                            if (isDarkTheme) Color.Black else Color(0xFF363636)
+                        }
                         Box(
                             contentAlignment = Alignment.Center
                         ) {
@@ -397,7 +424,7 @@ private fun BottomBar(
                                 modifier = Modifier
                                     .size(20.dp)
                                     .clip(CircleShape)
-                                    .background(com.example.proto7hive.ui.theme.BrandBackgroundDark),
+                                    .background(MaterialTheme.colorScheme.background),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (currentUser?.profileImageUrl != null && currentUser?.profileImageUrl?.isNotBlank() == true) {

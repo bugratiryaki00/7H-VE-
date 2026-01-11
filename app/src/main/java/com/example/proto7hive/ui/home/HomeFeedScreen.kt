@@ -37,7 +37,6 @@ import com.example.proto7hive.data.FirestoreConnectionRepository
 import com.example.proto7hive.data.FirestoreUserRepository
 import com.example.proto7hive.ui.components.SearchBar
 import com.example.proto7hive.ui.screens.Routes
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 import com.example.proto7hive.ui.notifications.NotificationViewModel
 import com.example.proto7hive.ui.notifications.NotificationViewModelFactory
@@ -88,7 +87,7 @@ fun HomeFeedScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header with Logo - Üstte, minimal padding
         Row(
@@ -153,7 +152,7 @@ fun HomeFeedScreen(
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 60.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(state.posts) { post ->
                         val user = state.users[post.userId]
@@ -194,7 +193,7 @@ fun PostCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF212121)
+            containerColor = MaterialTheme.colorScheme.background
         ),
         shape = RoundedCornerShape(8.dp)
     ) {
@@ -245,7 +244,7 @@ fun PostCard(
                             "Kullanıcı"
                         },
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
                     )
                     
@@ -254,13 +253,13 @@ fun PostCard(
                         Text(
                             text = user.department,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     } else if (user?.bio != null && user.bio.isNotBlank()) {
                         Text(
                             text = user.bio,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }
                     
@@ -269,14 +268,14 @@ fun PostCard(
                         Text(
                             text = getTimeAgo(post.timestamp),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
                 }
             }
             
             Divider(
-                color = Color.White.copy(alpha = 0.1f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                 modifier = Modifier.padding(bottom = 12.dp)
             )
             
@@ -284,7 +283,7 @@ fun PostCard(
             Text(
                 text = post.text,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(bottom = if (post.imageUrl != null) 12.dp else 0.dp)
             )
             
@@ -325,14 +324,14 @@ fun PostCard(
                     Icon(
                         imageVector = if (isLiked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
                         contentDescription = "Beğen",
-                        tint = if (isLiked) BrandYellow else Color.White.copy(alpha = 0.7f),
+                        tint = if (isLiked) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = if (likeCount > 0) "$likeCount Beğeni" else "Beğen",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (isLiked) BrandYellow else Color.White.copy(alpha = 0.7f)
+                        color = if (isLiked) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
                 
@@ -344,14 +343,14 @@ fun PostCard(
                     Icon(
                         imageVector = Icons.Default.Comment,
                         contentDescription = "Yorum Yap",
-                        tint = Color.White.copy(alpha = 0.7f),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Yorum Yap",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
             }

@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proto7hive.R
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandText
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -68,7 +68,7 @@ fun SignUpStep6Screen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -104,8 +104,8 @@ fun SignUpStep6Screen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = BrandText,
                     unfocusedTextColor = BrandText,
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.White,
+                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                     focusedPlaceholderColor = Color(0xFF999999),
                     unfocusedPlaceholderColor = Color(0xFF999999),
                     cursorColor = BrandText
@@ -136,12 +136,12 @@ fun SignUpStep6Screen(
                 if (state.isLoading) {
                     androidx.compose.material3.CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = BrandBackgroundDark
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 } else {
                     Text(
                         text = "Next",
-                        color = BrandBackgroundDark,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )

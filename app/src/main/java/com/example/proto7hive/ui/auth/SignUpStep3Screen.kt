@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -32,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proto7hive.R
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandText
 import com.example.proto7hive.ui.theme.BrandYellow
 
@@ -46,7 +46,7 @@ fun SignUpStep3Screen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -95,7 +95,7 @@ fun SignUpStep3Screen(
                         onClick = { viewModel.updateGender(gender) },
                         colors = RadioButtonDefaults.colors(
                             selectedColor = BrandYellow,
-                            unselectedColor = Color.White
+                            unselectedColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
                 }
@@ -134,7 +134,7 @@ fun SignUpStep3Screen(
             ) {
                 Text(
                     text = "Next",
-                    color = BrandBackgroundDark,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )

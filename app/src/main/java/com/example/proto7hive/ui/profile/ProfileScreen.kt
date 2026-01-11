@@ -35,7 +35,6 @@ import com.example.proto7hive.ui.components.SearchBar
 import com.example.proto7hive.ui.home.PostCard
 import com.example.proto7hive.ui.home.getTimeAgo
 import com.example.proto7hive.ui.jobs.JobCard
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 
 @Composable
@@ -128,7 +127,7 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header with Logo and Back Button (if not own profile) - Üstte, minimal padding
         Row(
@@ -144,7 +143,7 @@ fun ProfileScreen(
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Geri",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             } else {
@@ -181,7 +180,7 @@ fun ProfileScreen(
                 ) {
                     Text(
                         text = "Hata: ${profileState.errorMessage}",
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     TextButton(onClick = onRefresh) {
@@ -235,7 +234,7 @@ fun ProfileScreen(
                                         ) {
                                             Text(
                                                 text = "Henüz post paylaşılmamış",
-                                                color = Color.White.copy(alpha = 0.5f)
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                             )
                                         }
                                         
@@ -274,7 +273,7 @@ fun ProfileScreen(
                                         ) {
                                             Text(
                                                 text = "Henüz work paylaşılmamış",
-                                                color = Color.White.copy(alpha = 0.5f)
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                             )
                                         }
                                         
@@ -332,7 +331,7 @@ fun ProfileHeader(
         modifier = Modifier
             .fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF212121)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(
             topStart = 12.dp,
@@ -371,7 +370,7 @@ fun ProfileHeader(
                     modifier = Modifier
                         .size(76.dp)
                         .clip(CircleShape)
-                        .background(BrandBackgroundDark),
+                        .background(MaterialTheme.colorScheme.background),
                     contentAlignment = Alignment.Center
                 ) {
                     if (user?.profileImageUrl != null && user.profileImageUrl.isNotBlank()) {
@@ -408,7 +407,7 @@ fun ProfileHeader(
                         "Kullanıcı"
                     },
                     style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
 
@@ -456,7 +455,7 @@ fun ProfileHeader(
                             text = tagText,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -489,7 +488,7 @@ fun ProfileHeader(
                 Text(
                     text = user.bio,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
             }
@@ -499,7 +498,7 @@ fun ProfileHeader(
                 Text(
                     text = user.department,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     modifier = Modifier.padding(bottom = if (!isOwnProfile) 8.dp else 0.dp)
                 )
             }
@@ -516,12 +515,12 @@ fun ProfileHeader(
                         enabled = false,
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = Color(0xFF353535),
-                            contentColor = Color.White,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
                             disabledContainerColor = Color(0xFF353535),
-                            disabledContentColor = Color.White
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface
                         ),
                         shape = RoundedCornerShape(20.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.4f)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)),
                         modifier = Modifier
                             .height(32.dp)
                             .widthIn(min = 90.dp)
@@ -530,7 +529,7 @@ fun ProfileHeader(
                             text = "Connected",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 } else {
@@ -543,10 +542,10 @@ fun ProfileHeader(
                         },
                         enabled = !isPending,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isPending) Color(0xFF404040) else BrandYellow,
-                            disabledContainerColor = Color(0xFF404040),
-                            contentColor = if (isPending) Color.White else Color.Black,
-                            disabledContentColor = Color.White
+                            containerColor = if (isPending) MaterialTheme.colorScheme.surface else BrandYellow,
+                            disabledContainerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = if (isPending) MaterialTheme.colorScheme.onSurface else Color.Black,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface
                         ),
                         shape = RoundedCornerShape(20.dp),
                         modifier = Modifier
@@ -574,13 +573,13 @@ fun StatisticItem(count: String, label: String) {
         Text(
             text = count,
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold
         )
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.7f)
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
     }
 }
@@ -595,7 +594,7 @@ fun ProfileTabs(
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF212121)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(
             topStart = 12.dp,
@@ -620,7 +619,7 @@ fun ProfileTabs(
                         text = "POSTS",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
-                        color = if (selectedTab == 0) BrandYellow else Color.White.copy(alpha = 0.7f)
+                        color = if (selectedTab == 0) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
 
@@ -636,7 +635,7 @@ fun ProfileTabs(
                         text = "WORKS",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
-                        color = if (selectedTab == 1) BrandYellow else Color.White.copy(alpha = 0.7f)
+                        color = if (selectedTab == 1) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -650,14 +649,14 @@ fun ProfileTabs(
                     modifier = Modifier
                         .weight(1f)
                         .height(2.dp)
-                        .background(if (selectedTab == 0) BrandYellow else Color.White.copy(alpha = 0.3f))
+                        .background(if (selectedTab == 0) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
                 )
                 // Right half (WORKS)
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .height(2.dp)
-                        .background(if (selectedTab == 1) BrandYellow else Color.White.copy(alpha = 0.3f))
+                        .background(if (selectedTab == 1) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
                 )
             }
         }

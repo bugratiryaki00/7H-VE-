@@ -45,7 +45,7 @@ fun SearchBar(
         Box(
             modifier = Modifier
                 .widthIn(max = 320.dp)
-                .fillMaxWidth(0.85f)
+                .fillMaxWidth(0.92f)
                 .clickable { onSearchClick() }
         ) {
             OutlinedTextField(
@@ -62,7 +62,7 @@ fun SearchBar(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
+                    .height(40.dp),
                 shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = BrandYellow,

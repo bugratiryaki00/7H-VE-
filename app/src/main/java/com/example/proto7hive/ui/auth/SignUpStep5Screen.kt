@@ -31,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -47,7 +48,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.proto7hive.R
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandText
 import com.example.proto7hive.ui.theme.BrandYellow
 
@@ -107,7 +107,7 @@ fun SignUpStep5Screen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -138,7 +138,7 @@ fun SignUpStep5Screen(
                     modifier = Modifier
                         .size(116.dp)
                         .clip(CircleShape)
-                        .background(BrandBackgroundDark),
+                        .background(MaterialTheme.colorScheme.background),
                     contentAlignment = Alignment.Center
                 ) {
                     if (state.profileImageUri != null) {
@@ -188,7 +188,7 @@ fun SignUpStep5Screen(
                 ) {
                     Text(
                         text = "Add",
-                        color = BrandBackgroundDark,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -215,7 +215,7 @@ fun SignUpStep5Screen(
                 ) {
                     Text(
                         text = "Take",
-                        color = BrandBackgroundDark,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -240,7 +240,7 @@ fun SignUpStep5Screen(
             ) {
                 Text(
                     text = "Confirm",
-                    color = BrandBackgroundDark,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )

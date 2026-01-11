@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proto7hive.R
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandText
 import com.example.proto7hive.ui.theme.BrandYellow
 
@@ -52,7 +52,7 @@ fun SignUpStep2Screen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -100,8 +100,8 @@ fun SignUpStep2Screen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = BrandText,
                     unfocusedTextColor = BrandText,
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.White,
+                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                     focusedPlaceholderColor = Color(0xFF999999),
                     unfocusedPlaceholderColor = Color(0xFF999999),
                     cursorColor = BrandText
@@ -131,7 +131,7 @@ fun SignUpStep2Screen(
             ) {
                 Text(
                     text = "Submit",
-                    color = BrandBackgroundDark,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )

@@ -26,7 +26,6 @@ import com.example.proto7hive.ui.home.PostCard
 import com.example.proto7hive.ui.jobs.JobCard
 import com.example.proto7hive.ui.connections.ConnectionCard
 import com.example.proto7hive.ui.screens.Routes
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 import kotlinx.coroutines.delay
 
@@ -47,7 +46,7 @@ fun SearchScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Top Bar with Back Button
         Row(
@@ -65,7 +64,7 @@ fun SearchScreen(
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Back",
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -89,8 +88,8 @@ fun SearchScreen(
                 focusedBorderColor = BrandYellow,
                 unfocusedBorderColor = BrandYellow,
                 cursorColor = BrandYellow,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                 focusedPlaceholderColor = BrandYellow,
                 unfocusedPlaceholderColor = BrandYellow,
                 focusedContainerColor = Color.Transparent,
@@ -109,7 +108,7 @@ fun SearchScreen(
             ) {
                 Text(
                     text = "Enter a search query to find users, posts, and jobs",
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -134,7 +133,7 @@ fun SearchScreen(
                     ) {
                         Text(
                             text = "Error: ${state.errorMessage}",
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -147,7 +146,7 @@ fun SearchScreen(
                     ) {
                         Text(
                             text = "No results found for \"$searchQuery\"",
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -164,7 +163,7 @@ fun SearchScreen(
                                 Text(
                                     text = "Users (${state.users.size})",
                                     style = MaterialTheme.typography.titleLarge,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -184,7 +183,7 @@ fun SearchScreen(
                                 Text(
                                     text = "Posts (${state.posts.size})",
                                     style = MaterialTheme.typography.titleLarge,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(top = if (state.users.isNotEmpty()) 8.dp else 0.dp)
                                 )
@@ -211,7 +210,7 @@ fun SearchScreen(
                                 Text(
                                     text = "Jobs (${state.jobs.size})",
                                     style = MaterialTheme.typography.titleLarge,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(top = if (state.posts.isNotEmpty() || state.users.isNotEmpty()) 8.dp else 0.dp)
                                 )
@@ -246,7 +245,7 @@ private fun UserSearchResultCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF212121)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -292,7 +291,7 @@ private fun UserSearchResultCard(
                 Text(
                     text = listOfNotNull(user.name, user.surname).joinToString(" "),
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
                 if (user.department != null && user.department.isNotBlank()) {
@@ -300,7 +299,7 @@ private fun UserSearchResultCard(
                     Text(
                         text = user.department,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
                 if (user.bio != null && user.bio.isNotBlank()) {
@@ -308,7 +307,7 @@ private fun UserSearchResultCard(
                     Text(
                         text = user.bio,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         maxLines = 2
                     )
                 }

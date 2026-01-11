@@ -19,6 +19,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,7 +41,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proto7hive.R
 import com.example.proto7hive.data.AuthRepository
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandText
 import com.example.proto7hive.ui.theme.BrandYellow
 
@@ -74,7 +74,7 @@ fun SignUpScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -100,8 +100,8 @@ fun SignUpScreen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = BrandText,
                     unfocusedTextColor = BrandText,
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.White,
+                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                     focusedPlaceholderColor = Color(0xFF999999),
                     unfocusedPlaceholderColor = Color(0xFF999999),
                     cursorColor = BrandText
@@ -128,8 +128,8 @@ fun SignUpScreen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = BrandText,
                     unfocusedTextColor = BrandText,
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.White,
+                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                     focusedPlaceholderColor = Color(0xFF999999),
                     unfocusedPlaceholderColor = Color(0xFF999999),
                     cursorColor = BrandText
@@ -156,8 +156,8 @@ fun SignUpScreen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = BrandText,
                     unfocusedTextColor = BrandText,
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.White,
+                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                     focusedPlaceholderColor = Color(0xFF999999),
                     unfocusedPlaceholderColor = Color(0xFF999999),
                     cursorColor = BrandText
@@ -191,12 +191,12 @@ fun SignUpScreen(
                 if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = BrandBackgroundDark
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 } else {
                     Text(
                         text = "Submit",
-                        color = BrandBackgroundDark,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )

@@ -35,7 +35,6 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.proto7hive.R
 import com.example.proto7hive.ui.screens.Routes
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 import com.example.proto7hive.ui.components.SearchBar
 import java.text.SimpleDateFormat
@@ -72,7 +71,7 @@ fun NotificationScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header with Logo
         Row(
@@ -133,7 +132,7 @@ fun NotificationScreen(
                 ) {
                     Text(
                         text = title,
-                        color = Color.White, // Text rengi her zaman beyaz
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -163,7 +162,7 @@ fun NotificationScreen(
                 ) {
                     Text(
                         text = "Hata: ${state.errorMessage}",
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -186,7 +185,7 @@ fun NotificationScreen(
                     ) {
                         Text(
                             text = "No notifications",
-                            color = Color.White.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
                 } else {
@@ -254,7 +253,7 @@ fun NotificationScreen(
                                 }
                             )
                             Divider(
-                                color = Color.White.copy(alpha = 0.1f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                                 thickness = 1.dp,
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             )
@@ -319,14 +318,14 @@ fun NotificationItem(
         ) {
             Text(
                 text = fromUser?.let { "${it.name} ${it.surname}" } ?: "Unknown User",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodyLarge
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = notification.message,
-                color = Color.White.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -370,12 +369,12 @@ fun NotificationItem(
                         )
                     },
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color.White
+                        contentColor = MaterialTheme.colorScheme.onSurface
                     ),
                     modifier = Modifier.height(32.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                     shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
                 ) {
                     Text(
                         text = "Reject",

@@ -25,7 +25,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.proto7hive.data.FirestoreCommentRepository
 import com.example.proto7hive.data.FirestoreUserRepository
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 import com.example.proto7hive.ui.home.getTimeAgo
 
@@ -58,7 +57,7 @@ fun CommentsScreen(
                 title = { 
                     Text(
                         text = "Yorumlar",
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     ) 
                 },
                 navigationIcon = {
@@ -66,16 +65,16 @@ fun CommentsScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Geri",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BrandBackgroundDark
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
-        containerColor = BrandBackgroundDark
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -92,7 +91,7 @@ fun CommentsScreen(
                         ) {
                             Text(
                                 text = "Henüz yorum yok\nİlk yorumu sen yap!",
-                                color = Color.White.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -115,9 +114,9 @@ fun CommentsScreen(
             }
 
             // New Comment Input - Column içinde en altta
-            Divider(color = Color.White.copy(alpha = 0.1f))
+            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
             Surface(
-                color = BrandBackgroundDark,
+                color = MaterialTheme.colorScheme.background,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -134,17 +133,17 @@ fun CommentsScreen(
                         placeholder = {
                             Text(
                                 text = "Yorum yaz...",
-                                color = Color.White.copy(alpha = 0.5f)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                             )
                         },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BrandYellow,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                             cursorColor = BrandYellow,
-                            focusedContainerColor = Color(0xFF404040),
-                            unfocusedContainerColor = Color(0xFF404040)
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
                         ),
                         keyboardOptions = KeyboardOptions(autoCorrect = true),
                         maxLines = 4,
@@ -158,7 +157,7 @@ fun CommentsScreen(
                             containerColor = BrandYellow,
                             contentColor = Color.Black,
                             disabledContainerColor = Color.Gray,
-                            disabledContentColor = Color.White
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface
                         ),
                         modifier = Modifier.height(56.dp)
                     ) {
@@ -236,7 +235,7 @@ fun CommentItem(
                         "Kullanıcı"
                     },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                 )
                 
@@ -244,7 +243,7 @@ fun CommentItem(
                     Text(
                         text = getTimeAgo(comment.timestamp),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -253,7 +252,7 @@ fun CommentItem(
             Text(
                 text = comment.text,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 4.dp)
             )
         }

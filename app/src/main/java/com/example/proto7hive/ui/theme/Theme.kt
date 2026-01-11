@@ -25,6 +25,11 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = BrandYellow,
+    background = Color(0xFFEEE9E1), // Light beige background
+    surface = Color(0xFFE5DDCF), // Light beige cards (post cards, input areas)
+    onPrimary = Color.Black,
+    onBackground = Color(0xFF000000), // Black text
+    onSurface = Color(0xFF000000),
     secondary = BrandSlate,
     tertiary = BrandTeal,
 )

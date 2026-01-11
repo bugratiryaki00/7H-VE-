@@ -31,7 +31,6 @@ import coil.compose.AsyncImage
 import com.example.proto7hive.R
 import com.example.proto7hive.model.User
 import com.example.proto7hive.ui.components.SearchBar
-import com.example.proto7hive.ui.theme.BrandBackgroundDark
 import com.example.proto7hive.ui.theme.BrandYellow
 
 @Composable
@@ -57,7 +56,7 @@ fun ConnectionsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrandBackgroundDark)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header with Logo - Üstte, minimal padding
         Row(
@@ -97,7 +96,7 @@ fun ConnectionsScreen(
                 ) {
                     Text(
                         text = "Hata: ${state.errorMessage}",
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     TextButton(onClick = { viewModel.refresh() }) {
@@ -117,14 +116,14 @@ fun ConnectionsScreen(
                             Text(
                                 text = "Recommendations",
                                 style = MaterialTheme.typography.headlineSmall,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(bottom = 4.dp)
                             )
                             Text(
                                 text = "Take a look at these profiles to extend your network",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
 
@@ -152,7 +151,7 @@ fun ConnectionsScreen(
                             Text(
                                 text = "My Connections",
                                 style = MaterialTheme.typography.headlineSmall,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
@@ -161,7 +160,7 @@ fun ConnectionsScreen(
                                 Text(
                                     text = "Henüz bağlantınız yok",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White.copy(alpha = 0.5f),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                     modifier = Modifier.padding(vertical = 16.dp)
                                 )
                             } else {
@@ -198,7 +197,7 @@ fun RecommendationCard(
             .width(180.dp)
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2A2A2A)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(16.dp)
     ) {
@@ -241,7 +240,7 @@ fun RecommendationCard(
             Text(
                 text = user.name,
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
@@ -251,7 +250,7 @@ fun RecommendationCard(
                 Text(
                     text = user.department,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     modifier = Modifier.padding(bottom = 2.dp)
                 )
             }
@@ -261,7 +260,7 @@ fun RecommendationCard(
                 Text(
                     text = user.bio,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     maxLines = 2
                 )
             }
@@ -305,7 +304,7 @@ fun ConnectionCard(
             .fillMaxWidth()
             .clickable(enabled = onClick != null) { onClick?.invoke() },
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2A2A2A)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -351,7 +350,7 @@ fun ConnectionCard(
                 Text(
                     text = listOfNotNull(user.name, user.surname).joinToString(" "),
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
@@ -361,7 +360,7 @@ fun ConnectionCard(
                     Text(
                         text = user.department,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         modifier = Modifier.padding(bottom = 2.dp)
                     )
                 }
@@ -371,7 +370,7 @@ fun ConnectionCard(
                     Text(
                         text = user.bio,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         maxLines = 1
                     )
                 }
