@@ -23,9 +23,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.proto7hive.R
+import android.content.Intent
+import android.net.Uri
 import com.example.proto7hive.data.AuthRepository
 import com.example.proto7hive.model.Post
 import com.example.proto7hive.model.Job
@@ -503,65 +507,101 @@ fun ProfileHeader(
                 )
             }
             
-            // Connect/Request Button (sadece başka kullanıcının profilinde)
+            // Follow and Email Buttons (sadece başka kullanıcının profilinde, sol alt köşede)
             if (!isOwnProfile && onAddConnection != null && user?.id != null) {
                 Spacer(modifier = Modifier.height(8.dp))
+                val context = LocalContext.current
                 val isPending = connectionRequestStatus == "pending"
                 
-                if (isConnected) {
-                    // Connected state - Outlined button style
-                    OutlinedButton(
-                        onClick = { },
-                        enabled = false,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color(0xFF353535),
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            disabledContainerColor = Color(0xFF353535),
-                            disabledContentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)),
-                        modifier = Modifier
-                            .height(32.dp)
-                            .widthIn(min = 90.dp)
-                    ) {
-                        Text(
-                            text = "Connected",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    // Follow/Connected Button
+                    if (isConnected) {
+                        // Connected state - Outlined button style
+                        OutlinedButton(
+                            onClick = { },
+                            enabled = false,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color(0xFF353535),
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                disabledContainerColor = Color(0xFF353535),
+                                disabledContentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                            modifier = Modifier.height(24.dp)
+                        ) {
+                            Text(
+                                text = "Connected",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    } else {
+                        // Follow or Pending state
+                        Button(
+                            onClick = { 
+                                if (!isPending) {
+                                    onAddConnection(user.id)
+                                }
+                            },
+                            enabled = !isPending,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isPending) MaterialTheme.colorScheme.surface else BrandYellow,
+                                disabledContainerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = if (isPending) MaterialTheme.colorScheme.onSurface else Color.Black,
+                                disabledContentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                            modifier = Modifier.height(24.dp)
+                        ) {
+                            Text(
+                                text = if (isPending) "Pending" else "Follow",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
-                } else {
-                    // Connect or Pending state
-                    Button(
-                        onClick = { 
-                            if (!isPending) {
-                                onAddConnection(user.id)
-                            }
-                        },
-                        enabled = !isPending,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isPending) MaterialTheme.colorScheme.surface else BrandYellow,
-                            disabledContainerColor = MaterialTheme.colorScheme.surface,
-                            contentColor = if (isPending) MaterialTheme.colorScheme.onSurface else Color.Black,
-                            disabledContentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier
-                            .height(32.dp)
-                            .widthIn(min = 90.dp)
-                    ) {
-                        Text(
-                            text = if (isPending) "Pending" else "Connect",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold
-                        )
+                    
+                    // Email Button
+                    if (user.email != null && user.email.isNotBlank()) {
+                        Button(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse("mailto:${user.email}")
+                                }
+                                try {
+                                    context.startActivity(Intent.createChooser(intent, "Send Email"))
+                                } catch (e: Exception) {
+                                    // Email app yoksa hiçbir şey yapma
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = BrandYellow,
+                                contentColor = Color.Black
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                            modifier = Modifier.height(24.dp)
+                        ) {
+                            Text(
+                                text = "E-Mail",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
                 }
             }
         }
-        }
+    }
     }
 }
 

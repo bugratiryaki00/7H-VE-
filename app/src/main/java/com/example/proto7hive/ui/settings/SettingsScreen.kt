@@ -98,25 +98,15 @@ fun SettingsScreen(
                 )
             }
             
-            // Logo ve "hive" text - Ortada
-            Row(
-                modifier = Modifier.align(Alignment.Center),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_logo_7hive),
-                    contentDescription = "Logo",
-                    modifier = Modifier.height(32.dp),
-                    contentScale = ContentScale.Fit
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "hive",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            // Logo - Ortada
+            Image(
+                painter = painterResource(id = R.drawable.ic_logo_7hive),
+                contentDescription = "Logo",
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .height(32.dp),
+                contentScale = ContentScale.Fit
+            )
         }
 
         // Title "Settings"

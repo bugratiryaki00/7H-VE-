@@ -10,6 +10,7 @@ import com.example.proto7hive.model.Post
 import com.example.proto7hive.model.User
 import com.example.proto7hive.model.Job
 import com.example.proto7hive.model.ConnectionRequest
+import com.example.proto7hive.model.JobApplication
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FieldPath
@@ -542,5 +543,108 @@ class FirestoreNotificationRepository(
             batch.update(doc.reference, "isRead", true)
         }
         batch.commit().await()
+    }
+}
+
+class FirestoreJobApplicationRepository(
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+) : JobApplicationRepository {
+    override suspend fun applyToJob(jobId: String, applicantId: String, jobOwnerId: String, message: String?): String {
+        val docRef = db.collection("jobApplications").document()
+        val application = JobApplication(
+            id = docRef.id,
+            jobId = jobId,
+            applicantId = applicantId,
+            jobOwnerId = jobOwnerId,
+            status = "pending",
+            timestamp = System.currentTimeMillis(),
+            message = message
+        )
+        val data = hashMapOf(
+            "jobId" to application.jobId,
+            "applicantId" to application.applicantId,
+            "jobOwnerId" to application.jobOwnerId,
+            "status" to application.status,
+            "timestamp" to application.timestamp,
+            "message" to (application.message ?: "")
+        )
+        docRef.set(data).await()
+        return docRef.id
+    }
+
+    override suspend fun getApplicationsByJobId(jobId: String): List<JobApplication> {
+        val snap = db.collection("jobApplications")
+            .whereEqualTo("jobId", jobId)
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .await()
+        return snap.documents.mapNotNull { doc ->
+            val data = doc.data
+            JobApplication(
+                id = doc.id,
+                jobId = data?.get("jobId") as? String ?: "",
+                applicantId = data?.get("applicantId") as? String ?: "",
+                jobOwnerId = data?.get("jobOwnerId") as? String ?: "",
+                status = data?.get("status") as? String ?: "pending",
+                timestamp = (data?.get("timestamp") as? Long) ?: 0L,
+                message = data?.get("message") as? String
+            )
+        }
+    }
+
+    override suspend fun getApplicationsByApplicantId(applicantId: String): List<JobApplication> {
+        val snap = db.collection("jobApplications")
+            .whereEqualTo("applicantId", applicantId)
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .await()
+        return snap.documents.mapNotNull { doc ->
+            val data = doc.data
+            JobApplication(
+                id = doc.id,
+                jobId = data?.get("jobId") as? String ?: "",
+                applicantId = data?.get("applicantId") as? String ?: "",
+                jobOwnerId = data?.get("jobOwnerId") as? String ?: "",
+                status = data?.get("status") as? String ?: "pending",
+                timestamp = (data?.get("timestamp") as? Long) ?: 0L,
+                message = data?.get("message") as? String
+            )
+        }
+    }
+
+    override suspend fun getApplicationsByJobOwnerId(jobOwnerId: String): List<JobApplication> {
+        val snap = db.collection("jobApplications")
+            .whereEqualTo("jobOwnerId", jobOwnerId)
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .await()
+        return snap.documents.mapNotNull { doc ->
+            val data = doc.data
+            JobApplication(
+                id = doc.id,
+                jobId = data?.get("jobId") as? String ?: "",
+                applicantId = data?.get("applicantId") as? String ?: "",
+                jobOwnerId = data?.get("jobOwnerId") as? String ?: "",
+                status = data?.get("status") as? String ?: "pending",
+                timestamp = (data?.get("timestamp") as? Long) ?: 0L,
+                message = data?.get("message") as? String
+            )
+        }
+    }
+
+    override suspend fun updateApplicationStatus(applicationId: String, status: String) {
+        db.collection("jobApplications").document(applicationId)
+            .update("status", status)
+            .await()
+    }
+
+    override suspend fun hasAppliedToJob(jobId: String, applicantId: String): Boolean {
+        val snap = db.collection("jobApplications")
+            .whereEqualTo("jobId", jobId)
+            .whereEqualTo("applicantId", applicantId)
+            .limit(1)
+            .get()
+            .await()
+        return !snap.isEmpty
     }
 }

@@ -122,4 +122,15 @@ data class ConnectionRequest(
     val timestamp: Long = 0L // Unix timestamp (milisaniye)
 )
 
+@Serializable
+data class JobApplication(
+    val id: String = "",
+    val jobId: String = "", // Başvurulan iş ID'si
+    val applicantId: String = "", // Başvuran kullanıcı ID'si
+    val jobOwnerId: String = "", // İş sahibi (job.userId)
+    val status: String = "pending", // "pending", "accepted", "rejected"
+    val timestamp: Long = 0L, // Unix timestamp (milisaniye)
+    val message: String? = null // Opsiyonel cover letter
+)
+
 

@@ -36,7 +36,7 @@ import androidx.navigation.navArgument
 import com.example.proto7hive.ui.home.HomeFeedRoute
 import com.example.proto7hive.ui.connections.ConnectionsRoute
 import com.example.proto7hive.ui.createpost.CreatePostRoute
-import com.example.proto7hive.ui.jobs.JobsRoute
+import com.example.proto7hive.ui.career.CareerRoute
 import com.example.proto7hive.ui.profile.ProfileRoute
 import com.example.proto7hive.ui.profile.UserProfileRoute
 import com.example.proto7hive.ui.search.SearchScreen
@@ -65,7 +65,7 @@ object Routes {
     const val HOME = "home" // Portfolio yerine
     const val CONNECTIONS = "connections" // Projects yerine
     const val CREATE_POST = "create_post" // Announcements yerine
-    const val JOBS = "jobs" // Matches yerine
+    const val CAREER = "career" // Jobs yerine Career
     const val PROFILE = "profile"
     const val USER_PROFILE = "user/{userId}"
     const val USER_PROFILE_WITH_JOB = "user/{userId}/job/{jobId}"
@@ -187,8 +187,8 @@ fun RootScaffold(
                     }
                 )
             }
-            composable(Routes.JOBS) { 
-                JobsRoute(navController = navController)
+            composable(Routes.CAREER) { 
+                CareerRoute(navController = navController)
             }
             composable(Routes.PROFILE) { 
                 ProfileRoute(
@@ -337,7 +337,7 @@ private fun BottomBar(
         Routes.HOME,
         Routes.CONNECTIONS,
         Routes.CREATE_POST,
-        Routes.JOBS,
+        Routes.CAREER,
         Routes.PROFILE,
     )
     
@@ -368,7 +368,7 @@ private fun BottomBar(
                     Routes.HOME -> Triple(R.drawable.ic_homefeed, null, "Home")
                     Routes.CONNECTIONS -> Triple(R.drawable.ic_connections_icon, null, "Connections")
                     Routes.CREATE_POST -> Triple(R.drawable.ic_add_hexagon, null, "Share")
-                    Routes.JOBS -> Triple(R.drawable.ic_jobs_icon, null, "Jobs")
+                    Routes.CAREER -> Triple(R.drawable.ic_jobs_icon, null, "Career")
                     Routes.PROFILE -> Triple(null, Icons.Default.AccountCircle, "Profile")
                     else -> Triple(null, Icons.Default.Home, route)
                 }

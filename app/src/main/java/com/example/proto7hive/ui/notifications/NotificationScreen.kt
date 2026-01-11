@@ -234,19 +234,9 @@ fun NotificationScreen(
                                             }
                                         }
                                         "INVITE" -> {
-                                            // Navigate to related content
-                                            notificationWithUser.notification.relatedId?.let { relatedId ->
-                                                when (notificationWithUser.notification.relatedType) {
-                                                    "project" -> {
-                                                        // navController?.navigate(Routes.projectDetail(relatedId))
-                                                    }
-                                                    "job" -> {
-                                                        navController?.navigate(Routes.jobDetail(relatedId))
-                                                    }
-                                                    "team" -> {
-                                                        // Handle team invite
-                                                    }
-                                                }
+                                            // İşverenin (fromUserId) profiline git
+                                            notificationWithUser.notification.fromUserId.let { userId ->
+                                                navController?.navigate(Routes.userProfile(userId))
                                             }
                                         }
                                     }

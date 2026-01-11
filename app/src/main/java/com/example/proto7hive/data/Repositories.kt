@@ -90,6 +90,15 @@ interface NotificationRepository {
     suspend fun markAllAsRead(userId: String): Unit // Tüm bildirimleri okundu olarak işaretle
 }
 
+interface JobApplicationRepository {
+    suspend fun applyToJob(jobId: String, applicantId: String, jobOwnerId: String, message: String? = null): String // Başvuru oluştur (döner: applicationId)
+    suspend fun getApplicationsByJobId(jobId: String): List<com.example.proto7hive.model.JobApplication> // Bir işe gelen başvurular
+    suspend fun getApplicationsByApplicantId(applicantId: String): List<com.example.proto7hive.model.JobApplication> // Kullanıcının yaptığı başvurular
+    suspend fun getApplicationsByJobOwnerId(jobOwnerId: String): List<com.example.proto7hive.model.JobApplication> // İşverenin işlerine gelen başvurular
+    suspend fun updateApplicationStatus(applicationId: String, status: String): Unit // Status güncelle (pending -> accepted/rejected)
+    suspend fun hasAppliedToJob(jobId: String, applicantId: String): Boolean // Kullanıcı bu işe başvurmuş mu?
+}
+
 class MockPortfolioRepository : PortfolioRepository {
     override suspend fun getPortfolios(): List<PortfolioCard> = MockData.portfolios
 }
