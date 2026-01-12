@@ -104,7 +104,7 @@ fun SettingsScreen(
                 contentDescription = "Logo",
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .height(32.dp),
+                        .height(32.dp),
                 contentScale = ContentScale.Fit
             )
         }

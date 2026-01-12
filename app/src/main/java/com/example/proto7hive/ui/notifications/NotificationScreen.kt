@@ -85,7 +85,7 @@ fun NotificationScreen(
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(80.dp),
+                modifier = Modifier.height(100.dp),
                 contentScale = ContentScale.Fit
             )
         }

@@ -82,14 +82,14 @@ class CareerViewModel(
                 // Kaydedilen iş ID'lerini al
                 val savedJobIds = jobRepository.getSavedJobs(currentUser.uid)
 
-                // Kaydedilen işleri filtrele (kendi işlerim hariç)
+                // Kaydedilen işleri filtrele (kendi işlerim hariç, sadece çalışan arayan işler - isJobPosting = true)
                 val savedJobsList = otherUsersJobs.filter {
-                    it.id in savedJobIds || it.id.replace("post_", "") in savedJobIds
+                    it.isJobPosting == true && (it.id in savedJobIds || it.id.replace("post_", "") in savedJobIds)
                 }
 
-                // Önerilen işler = kaydedilenler hariç diğer kullanıcıların işleri (kendi işlerim hariç)
+                // Önerilen işler = kaydedilenler hariç diğer kullanıcıların işleri (kendi işlerim hariç, sadece çalışan arayan işler - isJobPosting = true)
                 val recommendedJobsList = otherUsersJobs.filter {
-                    it.id !in savedJobIds && it.id.replace("post_", "") !in savedJobIds
+                    it.isJobPosting == true && it.id !in savedJobIds && it.id.replace("post_", "") !in savedJobIds
                 }
 
                 // Başvurulan iş ID'lerini al

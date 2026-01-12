@@ -24,9 +24,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
@@ -70,6 +72,7 @@ fun ProfileRoute(
     
     ProfileScreen(
         profileState = profileState,
+        profileViewModel = profileViewModel,
         authViewModel = authViewModel,
         onNavigateToOnboarding = onNavigateToOnboarding,
         onNavigateToSettings = onNavigateToSettings,
@@ -99,6 +102,7 @@ factory = ProfileViewModelFactory(userId = userId)
     
     ProfileScreen(
         profileState = profileState,
+        profileViewModel = profileViewModel,
         authViewModel = authViewModel,
         onNavigateToOnboarding = { },
         onNavigateToSettings = { }, // Başka kullanıcının profilinde settings yok
@@ -118,6 +122,7 @@ factory = ProfileViewModelFactory(userId = userId)
 @Composable
 fun ProfileScreen(
     profileState: ProfileUiState,
+    profileViewModel: ProfileViewModel,
     authViewModel: AuthViewModel,
     onNavigateToOnboarding: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
@@ -139,40 +144,57 @@ fun ProfileScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header with Logo and Back Button (if not own profile) - Üstte, minimal padding
+        // Top Bar: Back Button (if needed) | Logo | Settings/Notification
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 0.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Back Button (only for other users' profiles)
-            if (!isOwnProfile) {
+            if (onNavigateBack != {} && !isOwnProfile) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Geri",
+                        contentDescription = "Back",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             } else {
-                Spacer(modifier = Modifier.width(48.dp)) // Spacer to center logo when no back button
+                Spacer(modifier = Modifier.width(48.dp))
             }
-            
-            // Logo (centered)
+
+            // Logo
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
                 modifier = Modifier.height(80.dp),
                 contentScale = ContentScale.Fit
             )
-            
-            // Right side spacer for symmetry
-            Spacer(modifier = Modifier.width(48.dp))
+
+            // Settings or Notification Icon
+            Row {
+                IconButton(onClick = onNavigateToNotifications) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Notifications",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                if (isOwnProfile) {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
         }
 
-        // Search Bar - Logo'nun tam altında, arada boşluk yok
+        // Search Bar
         SearchBar(
             modifier = Modifier.padding(top = 0.dp, bottom = 0.dp),
             onSearchClick = onNavigateToSearch,
@@ -189,12 +211,12 @@ fun ProfileScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Hata: ${profileState.errorMessage}",
+                        text = "Error: ${profileState.errorMessage}",
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     TextButton(onClick = onRefresh) {
-                        Text("Yeniden Dene", color = BrandYellow)
+                        Text("Retry", color = BrandYellow)
                     }
                 }
             }
@@ -225,95 +247,126 @@ fun ProfileScreen(
                     )
 
                     // Content based on selected tab
-                    Box(modifier = Modifier.weight(1f)) {
-                        when (selectedTab) {
-                            0 -> {
-                                // POSTS Tab - Sadece postType="post" olanları göster
-                                val postsOnly = profileState.posts.filter { it.postType == "post" }
-                                if (postsOnly.isEmpty()) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .fillMaxWidth()
-                                                .padding(32.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = "Henüz post paylaşılmamış",
-                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                                            )
-                                        }
-                                        
+                    when (selectedTab) {
+                        0 -> {
+                            // POSTS Tab - postType="post" olan postları göster
+                            val postsOnly = profileState.posts.filter { it.postType == "post" }
+                            val hasPosts = postsOnly.isNotEmpty()
+                            
+                            if (!hasPosts) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "No posts yet",
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                    )
+                                }
+                            } else {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(bottom = 60.dp)
+                                ) {
+                                    items(postsOnly) { post ->
+                                        PostCard(
+                                            post = post,
+                                            user = profileState.user
+                                        )
                                     }
-                                } else {
-                                    LazyColumn(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentPadding = PaddingValues(bottom = 60.dp)
-                                    ) {
-                                        items(postsOnly) { post ->
-                                            PostCard(
-                                                post = post,
-                                                user = profileState.user
-                                            )
-                                        }
-                                        
-                                    }
+                                    
                                 }
                             }
-                            1 -> {
-                                // WORKS Tab - postType="work" olan postları ve jobs'ları göster
-                                val worksOnly = profileState.posts.filter { it.postType == "work" }
-                                val hasWorks = worksOnly.isNotEmpty() || profileState.jobs.isNotEmpty()
-                                
-                                if (!hasWorks) {
-                                    Column(
+                        }
+                        1 -> {
+                            // WORKS Tab - Önce koleksiyonlar, sonra seçilen koleksiyondaki work'ler
+                            if (profileState.selectedCollectionId == null) {
+                                // Koleksiyon listesi göster (2 sütunlu grid)
+                                if (profileState.collections.isEmpty()) {
+                                    Box(
                                         modifier = Modifier
                                             .fillMaxSize()
+                                            .padding(32.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
+                                        Text(
+                                            text = "No collections yet",
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                } else {
+                                    LazyVerticalGrid(
+                                        columns = GridCells.Fixed(2),
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 60.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        items(profileState.collections) { collection ->
+                                            CollectionGridCard(
+                                                collection = collection,
+                                                onClick = {
+                                                    profileViewModel.selectCollection(collection.id)
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Seçilen koleksiyondaki work'leri göster
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    // Back button
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        IconButton(
+                                            onClick = { profileViewModel.selectCollection(null) }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.ArrowBack,
+                                                contentDescription = "Back",
+                                                tint = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                        Text(
+                                            text = profileState.collections.find { it.id == profileState.selectedCollectionId }?.name ?: "Collection",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(start = 8.dp)
+                                        )
+                                    }
+                                    
+                                    // Works list - PostCard gibi göster
+                                    if (profileState.selectedCollectionPosts.isEmpty()) {
                                         Box(
                                             modifier = Modifier
-                                                .weight(1f)
-                                                .fillMaxWidth()
+                                                .fillMaxSize()
                                                 .padding(32.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(
-                                                text = "Henüz work paylaşılmamış",
+                                                text = "No works in this collection",
                                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                             )
                                         }
-                                        
-                                    }
-                                } else {
-                                    LazyColumn(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentPadding = PaddingValues(bottom = 60.dp)
-                                    ) {
-                                        // Work type postları göster
-                                        items(worksOnly) { post ->
-                                            PostCard(
-                                                post = post,
-                                                user = profileState.user
-                                            )
+                                    } else {
+                                        LazyColumn(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentPadding = PaddingValues(bottom = 60.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            items(profileState.selectedCollectionPosts) { post ->
+                                                PostCard(
+                                                    post = post,
+                                                    user = profileState.user
+                                                )
+                                            }
                                         }
-                                        
-                                        // Jobs'ları göster
-                                        items(profileState.jobs) { job ->
-                                            val isHighlighted = selectedJobId == job.id
-                                            JobCard(
-                                                job = job,
-                                                user = profileState.user,
-                                                isSaved = false,
-                                                onSaveClick = { /* Profile'da save/unsave işlemi yapılmaz */ },
-                                                onRemoveClick = { /* Profile'da remove işlemi yapılmaz */ },
-                                                isHighlighted = isHighlighted
-                                            )
-                                        }
-                                        
                                     }
                                 }
                             }
@@ -364,79 +417,83 @@ fun ProfileHeader(
             Box(
                 contentAlignment = Alignment.Center
             ) {
-                // Outer circle with border (80dp)
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .border(
-                            width = 2.dp,
-                            color = BrandYellow,
-                            shape = CircleShape
-                        )
-                )
-                
-                // Inner profile image (76dp to account for border)
-                Box(
-                    modifier = Modifier
-                        .size(76.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.background),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (user?.profileImageUrl != null && user.profileImageUrl.isNotBlank()) {
-                        AsyncImage(
-                            model = user.profileImageUrl,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
+                if (user?.profileImageUrl != null && user.profileImageUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = user.profileImageUrl,
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(CircleShape)
+                            .border(3.dp, BrandYellow, CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(CircleShape)
+                            .background(BrandYellow.copy(alpha = 0.3f))
+                            .border(3.dp, BrandYellow, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = "Profile",
                             tint = BrandYellow,
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(60.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Name and Statistics on the right
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp)
             ) {
                 // Name
                 Text(
-                    text = if (user != null) {
-                        listOfNotNull(user.name, user.surname).joinToString(" ")
-                    } else {
-                        "Kullanıcı"
-                    },
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
+                    text = "${user?.name ?: ""} ${user?.surname ?: ""}".trim(),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 // Statistics
                 Row(
+                    modifier = Modifier.padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    StatisticItem(count = postsCount.toString(), label = "Posts")
-                    StatisticItem(count = worksCount.toString(), label = "Works")
+                    StatisticItem(count = "$postsCount", label = "Posts")
+                    StatisticItem(count = "$worksCount", label = "Works")
                     StatisticItem(count = "$connectionsCount+", label = "Bees")
+                }
+
+                // User Type & Department
+                if (user?.userType != null && user.userType.isNotBlank()) {
+                    Text(
+                        text = "${user.userType}${if (user.department != null && user.department.isNotBlank()) " • ${user.department}" else ""}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+
+                // Department abbreviation
+                if (user?.department != null && user.department.isNotBlank()) {
+                    Text(
+                        text = user.department.split(" ").map { it.firstOrNull()?.uppercase() ?: "" }.joinToString(""),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
                 }
             }
 
-            // User Type Tag and Edit Profile Button
+            // Right side: Tag and Edit Icon
             Column(
                 horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(start = 8.dp)
             ) {
                 // Tag (sadece JOB, INT, TEAM, HIRING, MENTOR göster) - badges'den al, userType'dan değil
                 val badgeValue = user?.badges?.firstOrNull()
@@ -449,7 +506,7 @@ fun ProfileHeader(
                     "MENTOR" -> Pair("MENTOR", Color(0xFF4B0079)) // Mor - Mentorluk veriyor
                     else -> Pair(null, null) // Student, Academician, Staff, Graduate gibi değerler gösterilmez
                 }
-                
+
                 // Tag göster (badge varsa ve geçerli bir tag ise)
                 if (!tagText.isNullOrBlank() && tagColor != null) {
                     Button(
@@ -469,18 +526,16 @@ fun ProfileHeader(
                         )
                     }
                 }
-                
-                // Edit Profile Button (pencil icon) - sadece kendi profilinde göster
+
+                // Edit Icon (only for own profile)
                 if (isOwnProfile) {
                     IconButton(
                         onClick = onEditProfile,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
+                        modifier = Modifier.padding(top = 8.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Profili Düzenle",
+                            contentDescription = "Edit Profile",
                             tint = BrandYellow,
                             modifier = Modifier.size(24.dp)
                         )
@@ -489,120 +544,74 @@ fun ProfileHeader(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Bio and Department below profile picture
-        Column {
-            // Bio
-            if (user?.bio != null && user.bio.isNotBlank()) {
-                Text(
-                    text = user.bio,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-            }
-
-            // University/Department
-            if (user?.department != null && user.department.isNotBlank()) {
-                Text(
-                    text = user.department,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(bottom = if (!isOwnProfile) 8.dp else 0.dp)
-                )
-            }
-            
-            // Follow and Email Buttons (sadece başka kullanıcının profilinde, sol alt köşede)
-            if (!isOwnProfile && onAddConnection != null && user?.id != null) {
-                Spacer(modifier = Modifier.height(8.dp))
+        // Connection Button (only for other users' profiles)
+        if (!isOwnProfile && onAddConnection != null && user != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 val context = LocalContext.current
-                val isPending = connectionRequestStatus == "pending"
                 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    // Follow/Connected Button
-                    if (isConnected) {
-                        // Connected state - Outlined button style
-                        OutlinedButton(
-                            onClick = { },
-                            enabled = false,
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color(0xFF353535),
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                                disabledContainerColor = Color(0xFF353535),
-                                disabledContentColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                            modifier = Modifier.height(24.dp)
-                        ) {
-                            Text(
-                                text = "Connected",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    } else {
-                        // Follow or Pending state
-                        Button(
-                            onClick = { 
-                                if (!isPending) {
-                                    onAddConnection(user.id)
-                                }
-                            },
-                            enabled = !isPending,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isPending) MaterialTheme.colorScheme.surface else BrandYellow,
-                                disabledContainerColor = MaterialTheme.colorScheme.surface,
-                                contentColor = if (isPending) MaterialTheme.colorScheme.onSurface else Color.Black,
-                                disabledContentColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                            modifier = Modifier.height(24.dp)
-                        ) {
-                            Text(
-                                text = if (isPending) "Pending" else "Follow",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 11.sp
-                            )
-                        }
+                // Connect/Follow Button
+                val (buttonText, buttonColor, isPending) = when {
+                    isConnected -> Triple("Connected", BrandYellow, false)
+                    connectionRequestStatus == "pending" -> Triple("Pending", MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f), true)
+                    else -> Triple("Follow", BrandYellow, false)
+                }
+                
+                if (isPending || !isConnected) {
+                    Button(
+                        onClick = {
+                            if (!isPending && !isConnected) {
+                                onAddConnection(user.id)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = buttonColor,
+                            contentColor = if (isPending) MaterialTheme.colorScheme.onSurface else Color.Black
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                        modifier = Modifier.height(24.dp)
+                    ) {
+                        Text(
+                            text = if (isPending) "Pending" else "Follow",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 11.sp
+                        )
                     }
-                    
-                    // Email Button
-                    if (user.email != null && user.email.isNotBlank()) {
-                        Button(
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                    data = Uri.parse("mailto:${user.email}")
-                                }
-                                try {
-                                    context.startActivity(Intent.createChooser(intent, "Send Email"))
-                                } catch (e: Exception) {
-                                    // Email app yoksa hiçbir şey yapma
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = BrandYellow,
-                                contentColor = Color.Black
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                            modifier = Modifier.height(24.dp)
-                        ) {
-                            Text(
-                                text = "E-Mail",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 11.sp
-                            )
-                        }
+                }
+                
+                // Email Button
+                if (user.email != null && user.email.isNotBlank()) {
+                    Button(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = Uri.parse("mailto:${user.email}")
+                            }
+                            try {
+                                context.startActivity(Intent.createChooser(intent, "Send Email"))
+                            } catch (e: Exception) {
+                                // Email app yoksa hiçbir şey yapma
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = BrandYellow,
+                            contentColor = Color.Black
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                        modifier = Modifier.height(24.dp)
+                    ) {
+                        Text(
+                            text = "E-Mail",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 11.sp
+                        )
                     }
                 }
             }
@@ -635,77 +644,133 @@ fun ProfileTabs(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit
 ) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // POSTS Tab
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onTabSelected(0) }
+                    .padding(vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "POSTS",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
+                    color = if (selectedTab == 0) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+
+            // WORKS Tab
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onTabSelected(1) }
+                    .padding(vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "WORKS",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
+                    color = if (selectedTab == 1) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+        }
+        
+        // Combined underline - left yellow when POSTS selected, right yellow when WORKS selected
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Left half (POSTS)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(2.dp)
+                    .background(if (selectedTab == 0) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+            )
+            // Right half (WORKS)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(2.dp)
+                    .background(if (selectedTab == 1) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+            )
+        }
+    }
+}
+
+@Composable
+fun CollectionGridCard(
+    collection: Collection,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .aspectRatio(1f)
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = RoundedCornerShape(
-            topStart = 12.dp,
-            topEnd = 12.dp,
-            bottomStart = 0.dp,
-            bottomEnd = 0.dp
-        )
+        shape = RoundedCornerShape(8.dp)
     ) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // POSTS Tab
-                Column(
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Collection image or default
+            if (collection.thumbnailUrl != null && collection.thumbnailUrl.isNotBlank()) {
+                AsyncImage(
+                    model = collection.thumbnailUrl,
+                    contentDescription = collection.name,
                     modifier = Modifier
-                        .weight(1f)
-                        .clickable { onTabSelected(0) }
-                        .padding(vertical = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "POSTS",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
-                        color = if (selectedTab == 0) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                }
-
-                // WORKS Tab
-                Column(
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .clickable { onTabSelected(1) }
-                        .padding(vertical = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "WORKS",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
-                        color = if (selectedTab == 1) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_collection_default),
+                        contentDescription = "Default Collection",
+                        modifier = Modifier
+                            .size(64.dp)
+                            .padding(16.dp),
+                        contentScale = ContentScale.Fit
                     )
                 }
             }
             
-            // Combined underline - left yellow when POSTS selected, right yellow when WORKS selected
-            Row(
-                modifier = Modifier.fillMaxWidth()
+            // Collection name overlay (bottom)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.7f)
+                            )
+                        )
+                    )
+                    .padding(12.dp)
             ) {
-                // Left half (POSTS)
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(2.dp)
-                        .background(if (selectedTab == 0) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
-                )
-                // Right half (WORKS)
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(2.dp)
-                        .background(if (selectedTab == 1) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+                Text(
+                    text = collection.name,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
     }
 }
-

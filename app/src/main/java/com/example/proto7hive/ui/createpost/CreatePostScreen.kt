@@ -117,7 +117,7 @@ fun CreatePostScreen(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
                 modifier = Modifier
-                    .height(80.dp)
+                    .height(100.dp)
                     .offset(x = 23.dp),
                 contentScale = ContentScale.Fit
             )
@@ -125,10 +125,20 @@ fun CreatePostScreen(
             // Share Button
             val canShare = when (state.postType) {
                 "work" -> {
-                    // Work için: title, company ve workType dolu olmalı
-                    state.workTitle.isNotBlank() && 
-                    state.workCompany.isNotBlank() && 
-                    state.workType.isNotBlank()
+                    if (state.isJobPosting == true) {
+                        // Çalışan arıyor - title, company ve workType dolu olmalı
+                        state.workTitle.isNotBlank() && 
+                        state.workCompany.isNotBlank() && 
+                        state.workType.isNotBlank() &&
+                        state.selectedCollectionId != null
+                    } else if (state.isJobPosting == false) {
+                        // Personal Work/Portfolio - koleksiyon ve (image veya text) olmalı
+                        state.selectedCollectionId != null && 
+                        (state.imageUri != null || state.text.trim().isNotEmpty())
+                    } else {
+                        // Henüz seçim yapılmamış
+                        false
+                    }
                 }
                 else -> {
                     // Post için: text veya image olmalı
@@ -419,7 +429,7 @@ private fun WorkFormContent(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Text(
-                text = "Çalışan arıyor musunuz?",
+                text = "Are you looking for employees?",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -441,13 +451,13 @@ private fun WorkFormContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Çalışan Arıyorum",
+                        text = "Looking for Employees",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "İş ilanı paylaşmak için tüm bilgileri doldurmanız gerekir",
+                        text = "Fill in all information to share a job posting",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -470,13 +480,13 @@ private fun WorkFormContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Kişisel İş/Portfolio",
+                        text = "Personal Work/Portfolio",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Sadece görsel ve koleksiyon seçimi yeterli",
+                        text = "Only image and collection selection required",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -702,7 +712,7 @@ private fun WorkBasicInfoTab(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                "Yeni Koleksiyon Oluştur",
+                                "Create New Collection",
                                 color = BrandYellow,
                                 fontWeight = FontWeight.Bold
                             )
@@ -981,7 +991,7 @@ private fun WorkPortfolioContent(
     ) {
         // Koleksiyon Seçimi
         Text(
-            text = "Koleksiyon *",
+            text = "Collection *",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -998,7 +1008,7 @@ private fun WorkPortfolioContent(
                 value = selectedCollection?.name ?: "",
                 onValueChange = { },
                 readOnly = true,
-                label = { Text("Koleksiyon Seç", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) },
+                label = { Text("Select Collection", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = collectionExpanded) },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1032,7 +1042,7 @@ private fun WorkPortfolioContent(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Add, contentDescription = null, tint = BrandYellow)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Yeni Koleksiyon Oluştur", color = MaterialTheme.colorScheme.onSurface)
+                            Text("Create New Collection", color = MaterialTheme.colorScheme.onSurface)
                         }
                     },
                     onClick = {
@@ -1045,7 +1055,7 @@ private fun WorkPortfolioContent(
         
         // Metin (Opsiyonel)
         Text(
-            text = "Açıklama (Opsiyonel)",
+            text = "Description (Optional)",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -1056,7 +1066,7 @@ private fun WorkPortfolioContent(
             onValueChange = { viewModel.updateText(it) },
             placeholder = {
                 Text(
-                    text = "İsteğe bağlı açıklama ekleyin",
+                    text = "Add optional description",
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
             },
@@ -1078,7 +1088,7 @@ private fun WorkPortfolioContent(
         
         // Görsel Ekleme
         Text(
-            text = "Görsel (Opsiyonel)",
+            text = "Image (Optional)",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -1139,7 +1149,7 @@ private fun WorkPortfolioContent(
                             modifier = Modifier.size(48.dp)
                         )
                         Text(
-                            text = "Görsel Ekle",
+                            text = "Add Image",
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                     }
@@ -1160,7 +1170,7 @@ fun CreateCollectionDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Yeni Koleksiyon Oluştur",
+                text = "Create New Collection",
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
@@ -1173,7 +1183,7 @@ fun CreateCollectionDialog(
                 OutlinedTextField(
                     value = collectionName,
                     onValueChange = { collectionName = it },
-                    label = { Text("Koleksiyon Adı", color = MaterialTheme.colorScheme.onSurface) },
+                    label = { Text("Collection Name", color = MaterialTheme.colorScheme.onSurface) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = BrandYellow,
@@ -1202,7 +1212,7 @@ fun CreateCollectionDialog(
                     disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
             ) {
-                Text("Oluştur")
+                Text("Create")
             }
         },
         dismissButton = {
@@ -1210,7 +1220,7 @@ fun CreateCollectionDialog(
                 onClick = onDismiss
             ) {
                 Text(
-                    "İptal",
+                    "Cancel",
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }

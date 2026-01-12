@@ -76,7 +76,7 @@ fun JobsScreen(
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(80.dp),
+                modifier = Modifier.height(100.dp),
                 contentScale = ContentScale.Fit
             )
         }
@@ -102,12 +102,12 @@ fun JobsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Hata: ${state.errorMessage}",
+                        text = "Error: ${state.errorMessage}",
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     TextButton(onClick = { viewModel.refresh() }) {
-                        Text("Yeniden Dene", color = BrandYellow)
+                        Text("Retry", color = BrandYellow)
                     }
                 }
             }

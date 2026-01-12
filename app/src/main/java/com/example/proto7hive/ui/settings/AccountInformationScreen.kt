@@ -19,6 +19,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -124,7 +127,7 @@ fun AccountInformationScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Geri",
+                        contentDescription = "Back",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
@@ -236,7 +239,7 @@ fun AccountInformationScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Galeri",
+                                text = "Gallery",
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
@@ -262,7 +265,7 @@ fun AccountInformationScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Kamera",
+                                text = "Camera",
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
@@ -276,7 +279,7 @@ fun AccountInformationScreen(
             OutlinedTextField(
                 value = state.name,
                 onValueChange = { viewModel.updateName(it) },
-                label = { Text("İsim", color = MaterialTheme.colorScheme.onSurface) },
+                label = { Text("Name", color = MaterialTheme.colorScheme.onSurface) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = BrandYellow,
@@ -294,7 +297,7 @@ fun AccountInformationScreen(
             OutlinedTextField(
                 value = state.surname,
                 onValueChange = { viewModel.updateSurname(it) },
-                label = { Text("Soyisim", color = MaterialTheme.colorScheme.onSurface) },
+                label = { Text("Surname", color = MaterialTheme.colorScheme.onSurface) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = BrandYellow,
@@ -312,7 +315,7 @@ fun AccountInformationScreen(
             OutlinedTextField(
                 value = state.email,
                 onValueChange = { },
-                label = { Text("E-posta", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) },
+                label = { Text("Email", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
@@ -332,7 +335,7 @@ fun AccountInformationScreen(
             OutlinedTextField(
                 value = state.department,
                 onValueChange = { viewModel.updateDepartment(it) },
-                label = { Text("Bölüm", color = MaterialTheme.colorScheme.onSurface) },
+                label = { Text("Department", color = MaterialTheme.colorScheme.onSurface) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = BrandYellow,
@@ -344,6 +347,12 @@ fun AccountInformationScreen(
                 ),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
+            )
+
+            // Badge Selection
+            BadgeSelectionDropdown(
+                selectedBadge = state.selectedBadge,
+                onBadgeSelected = { viewModel.updateBadge(it) }
             )
 
             // Bio
@@ -391,7 +400,7 @@ fun AccountInformationScreen(
                     )
                 } else {
                     Text(
-                        text = "Kaydet",
+                        text = "Save",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -410,10 +419,73 @@ fun AccountInformationScreen(
             // Success Message
             if (state.saveSuccess) {
                 Text(
-                    text = "Değişiklikler kaydedildi",
+                    text = "Changes saved",
                     color = BrandYellow,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BadgeSelectionDropdown(
+    selectedBadge: String?,
+    onBadgeSelected: (String?) -> Unit
+) {
+    val badgeOptions = listOf("JOB", "INT", "TEAM", "HIRING", "MENTOR")
+    var badgeExpanded by remember { mutableStateOf(false) }
+    val selectedBadgeDisplay = selectedBadge ?: ""
+    
+    ExposedDropdownMenuBox(
+        expanded = badgeExpanded,
+        onExpandedChange = { badgeExpanded = !badgeExpanded },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = selectedBadgeDisplay,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Badge", color = MaterialTheme.colorScheme.onSurface) },
+            placeholder = { Text("Select Badge", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = BrandYellow,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedLabelColor = BrandYellow,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            ),
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = badgeExpanded)
+            },
+            shape = RoundedCornerShape(8.dp)
+        )
+        ExposedDropdownMenu(
+            expanded = badgeExpanded,
+            onDismissRequest = { badgeExpanded = false },
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+        ) {
+            // None option
+            DropdownMenuItem(
+                text = { Text("None", color = MaterialTheme.colorScheme.onSurface) },
+                onClick = {
+                    onBadgeSelected(null)
+                    badgeExpanded = false
+                }
+            )
+            badgeOptions.forEach { badge ->
+                DropdownMenuItem(
+                    text = { Text(badge, color = MaterialTheme.colorScheme.onSurface) },
+                    onClick = {
+                        onBadgeSelected(badge)
+                        badgeExpanded = false
+                    }
                 )
             }
         }

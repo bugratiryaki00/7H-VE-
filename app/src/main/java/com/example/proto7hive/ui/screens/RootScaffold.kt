@@ -414,7 +414,7 @@ private fun BottomBar(
                             painter = painterResource(id = iconRes),
                             contentDescription = contentDesc,
                             modifier = Modifier.size(24.dp),
-                            colorFilter = ColorFilter.tint(iconColor),
+                            colorFilter = if (route == Routes.CREATE_POST) null else ColorFilter.tint(iconColor),
                             contentScale = ContentScale.Fit
                         )
                     } else if (route == Routes.PROFILE) {

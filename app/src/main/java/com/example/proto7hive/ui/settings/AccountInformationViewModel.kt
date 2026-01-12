@@ -20,6 +20,7 @@ data class AccountInformationUiState(
     val email: String = "",
     val bio: String = "",
     val department: String = "",
+    val selectedBadge: String? = null, // JOB, INT, TEAM, HIRING, MENTOR
     val profileImageUri: Uri? = null, // Yeni seçilen görsel (henüz yüklenmemiş)
     val profileImageUrl: String? = null, // Mevcut profil resmi URL'i
     val isLoading: Boolean = false,
@@ -44,7 +45,7 @@ class AccountInformationViewModel(
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {
             _uiState.value = _uiState.value.copy(
-                errorMessage = "Giriş yapmamış kullanıcı"
+                errorMessage = "User not logged in"
             )
             return
         }
@@ -61,19 +62,20 @@ class AccountInformationViewModel(
                         email = user.email,
                         bio = user.bio ?: "",
                         department = user.department ?: "",
+                        selectedBadge = user.badges.firstOrNull(),
                         profileImageUrl = user.profileImageUrl,
                         isLoading = false
                     )
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = "Kullanıcı bulunamadı"
+                        errorMessage = "User not found"
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Veriler yüklenirken hata oluştu: ${e.message}"
+                        errorMessage = "Error loading data: ${e.message}"
                 )
             }
         }
@@ -95,6 +97,10 @@ class AccountInformationViewModel(
         _uiState.value = _uiState.value.copy(department = department)
     }
 
+    fun updateBadge(badge: String?) {
+        _uiState.value = _uiState.value.copy(selectedBadge = badge)
+    }
+
     fun setProfileImage(uri: Uri) {
         _uiState.value = _uiState.value.copy(profileImageUri = uri)
     }
@@ -102,7 +108,7 @@ class AccountInformationViewModel(
     fun saveChanges() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {
-            _uiState.value = _uiState.value.copy(errorMessage = "Giriş yapmamış kullanıcı")
+            _uiState.value = _uiState.value.copy(errorMessage = "User not logged in")
             return
         }
 
@@ -118,11 +124,13 @@ class AccountInformationViewModel(
                 }
 
                 // Kullanıcı bilgilerini güncelle
+                val badges = if (state.selectedBadge != null) listOf(state.selectedBadge) else emptyList()
                 val updatedUser = state.user!!.copy(
                     name = state.name.trim(),
                     surname = state.surname.trim(),
                     bio = if (state.bio.isNotBlank()) state.bio.trim() else null,
                     department = if (state.department.isNotBlank()) state.department.trim() else null,
+                    badges = badges,
                     profileImageUrl = profileImageUrl
                 )
 
@@ -138,7 +146,7 @@ class AccountInformationViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,
-                    errorMessage = "Kaydetme hatası: ${e.message}"
+                        errorMessage = "Error saving: ${e.message}"
                 )
             }
         }

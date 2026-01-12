@@ -1,13 +1,10 @@
 ## Proje Dokümantasyonu
 
-Bu klasör, ekipler arası hizalanma ve geliştirme sürecini yürütmek için gerekli şablonları içerir.
+Bu klasör, proje dokümantasyonunu içerir.
 
-- `ProjectCharter.md`: Proje Bildirgesi (Kuzey Yıldızı)
+- `ACM431_SDD.md`: Yazılım Tasarım Dokümanı (Software Design Document)
 - `UserStoryMapping.md`: Epik ve kullanıcı hikâyeleri haritalaması
 - `MoSCoW.md`: MoSCoW önceliklendirme tablosu
-- `SDD.md`: Yazılım Tasarım Dokümanı (SDD)
-- `adr/0001-architecture.md`: Mimari Karar Kaydı (ADR)
-
-Tasarım çıktıları (ör. Figma) geldikçe şablonları güncelleyin. SDD yaşayan bir dokümandır.
+- `adr/0001-architecture.md`: Mimari Karar Kaydı (Architecture Decision Record)
 
 

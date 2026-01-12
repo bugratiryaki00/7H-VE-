@@ -80,7 +80,7 @@ fun CareerScreen(
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_7hive),
                 contentDescription = "7HIVE Logo",
-                modifier = Modifier.height(80.dp),
+                modifier = Modifier.height(100.dp),
                 contentScale = ContentScale.Fit
             )
         }
@@ -220,12 +220,12 @@ fun FindJobsTab(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Hata: ${state.errorMessage}",
+                    text = "Error: ${state.errorMessage}",
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 TextButton(onClick = { viewModel.refresh() }) {
-                    Text("Yeniden Dene", color = BrandYellow)
+                    Text("Retry", color = BrandYellow)
                 }
             }
         }
@@ -254,7 +254,7 @@ fun FindJobsTab(
 
                         if (state.recommendedJobs.isEmpty()) {
                             Text(
-                                text = "Henüz önerilen iş yok",
+                                text = "No recommended jobs yet",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
@@ -302,7 +302,7 @@ fun FindJobsTab(
 
                         if (state.savedJobs.isEmpty()) {
                             Text(
-                                text = "Henüz kaydedilmiş iş yok",
+                                text = "No saved jobs yet",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
@@ -369,12 +369,12 @@ fun MyPostingsTab(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Hata: ${state.errorMessage}",
+                    text = "Error: ${state.errorMessage}",
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 TextButton(onClick = { viewModel.refresh() }) {
-                    Text("Yeniden Dene", color = BrandYellow)
+                    Text("Retry", color = BrandYellow)
                 }
             }
         }
@@ -386,7 +386,7 @@ fun MyPostingsTab(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Henüz iş paylaşmadınız",
+                    text = "You haven't shared any jobs yet",
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -737,7 +737,7 @@ fun ApplicationsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Henüz başvuru yok",
+                    text = "No applications yet",
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                     style = MaterialTheme.typography.bodyLarge
                 )

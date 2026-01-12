@@ -31,6 +31,9 @@ data class ProfileUiState(
     val posts: List<Post> = emptyList(),
     val jobs: List<Job> = emptyList(),
     val collections: List<Collection> = emptyList(), // Kullanıcının koleksiyonları
+    val selectedCollectionJobs: List<Job> = emptyList(), // Seçilen koleksiyondaki job'lar
+    val selectedCollectionPosts: List<Post> = emptyList(), // Seçilen koleksiyondaki post'lar (work'ler)
+    val selectedCollectionId: String? = null, // Seçilen koleksiyon ID'si (null ise koleksiyon listesi gösterilir)
     val connectionsCount: Int = 0,
     val isConnected: Boolean = false, // Current user bu kullanıcıyı takip ediyor mu?
     val connectionRequestStatus: String? = null, // null, "pending" (gönderildi, bekliyor), "sent" (gönderildi)
@@ -162,7 +165,7 @@ class ProfileViewModel(
                     null
                 }
 
-                _uiState.value = ProfileUiState(
+                _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     user = user,
                     posts = posts,
@@ -170,7 +173,10 @@ class ProfileViewModel(
                     collections = collections,
                     connectionsCount = connectionsCount,
                     isConnected = isConnected,
-                    connectionRequestStatus = connectionRequestStatus
+                    connectionRequestStatus = connectionRequestStatus,
+                    selectedCollectionId = null, // Reset when loading profile
+                    selectedCollectionJobs = emptyList(), // Reset when loading profile
+                    selectedCollectionPosts = emptyList() // Reset when loading profile
                 )
             } catch (t: Throwable) {
                 _uiState.value = ProfileUiState(
@@ -183,6 +189,40 @@ class ProfileViewModel(
 
     fun refresh() {
         loadProfile()
+    }
+    
+    fun selectCollection(collectionId: String?) {
+        if (collectionId == null) {
+            _uiState.value = _uiState.value.copy(
+                selectedCollectionId = null,
+                selectedCollectionJobs = emptyList(),
+                selectedCollectionPosts = emptyList()
+            )
+        } else {
+            viewModelScope.launch {
+                try {
+                    val jobs = collectionRepository.getJobsByCollectionId(collectionId)
+                    // Job'lara karşılık gelen Post'ları bul (postType="work" ve aynı userId/imageUrl'e sahip olanlar)
+                    val currentState = _uiState.value
+                    val jobImageUrls = jobs.mapNotNull { it.imageUrl }.toSet()
+                    val matchingPosts = currentState.posts.filter { post ->
+                        post.postType == "work" &&
+                        post.userId == currentState.user?.id &&
+                        (post.imageUrl in jobImageUrls || (post.imageUrl == null && jobs.any { it.imageUrl == null }))
+                    }.sortedByDescending { it.timestamp }
+                    
+                    _uiState.value = _uiState.value.copy(
+                        selectedCollectionId = collectionId,
+                        selectedCollectionJobs = jobs,
+                        selectedCollectionPosts = matchingPosts
+                    )
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Error loading collection: ${e.message}"
+                    )
+                }
+            }
+        }
     }
 }
 

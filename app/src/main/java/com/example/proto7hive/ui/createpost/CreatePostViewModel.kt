@@ -147,14 +147,14 @@ class CreatePostViewModel(
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {
             _uiState.value = _uiState.value.copy(
-                errorMessage = "Giriş yapmamış kullanıcı"
+                errorMessage = "User not logged in"
             )
             return
         }
 
         if (name.isBlank()) {
             _uiState.value = _uiState.value.copy(
-                errorMessage = "Koleksiyon adı boş olamaz"
+                errorMessage = "Collection name cannot be empty"
             )
             return
         }
@@ -174,7 +174,7 @@ class CreatePostViewModel(
             } catch (e: Exception) {
                 android.util.Log.e("CreatePostViewModel", "Koleksiyon oluşturma hatası", e)
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = "Koleksiyon oluşturulamadı: ${e.message}"
+                    errorMessage = "Failed to create collection: ${e.message}"
                 )
             }
         }
@@ -203,7 +203,7 @@ class CreatePostViewModel(
             android.util.Log.e("CreatePostViewModel", "Hata tipi: ${e.javaClass.simpleName}")
             _uiState.value = _uiState.value.copy(
                 isUploadingImage = false,
-                errorMessage = "Görsel yüklenirken hata: ${e.message}"
+                errorMessage = "Error uploading image: ${e.message}"
             )
             null
         }
@@ -214,7 +214,7 @@ class CreatePostViewModel(
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {
             _uiState.value = currentState.copy(
-                errorMessage = "Giriş yapmamış kullanıcı"
+                errorMessage = "User not logged in"
             )
             return
         }
@@ -223,14 +223,14 @@ class CreatePostViewModel(
         if (currentState.postType == "work") {
             if (currentState.isJobPosting == null) {
                 _uiState.value = currentState.copy(
-                    errorMessage = "Lütfen çalışan arıyor musunuz seçin"
+                        errorMessage = "Please select if you are looking for employees"
                 )
                 return
             }
             
             if (currentState.selectedCollectionId == null) {
                 _uiState.value = currentState.copy(
-                    errorMessage = "Koleksiyon seçilmelidir"
+                    errorMessage = "Collection must be selected"
                 )
                 return
             }
@@ -239,19 +239,19 @@ class CreatePostViewModel(
                 // Çalışan arıyor - Basic Information zorunlu
                 if (currentState.workTitle.isBlank()) {
                     _uiState.value = currentState.copy(
-                        errorMessage = "İş başlığı boş olamaz"
+                        errorMessage = "Job title cannot be empty"
                     )
                     return
                 }
                 if (currentState.workCompany.isBlank()) {
                     _uiState.value = currentState.copy(
-                        errorMessage = "Şirket adı boş olamaz"
+                        errorMessage = "Company name cannot be empty"
                     )
                     return
                 }
                 if (currentState.workType.isBlank()) {
                     _uiState.value = currentState.copy(
-                        errorMessage = "Çalışma tipi seçilmelidir"
+                        errorMessage = "Work type must be selected"
                     )
                     return
                 }
@@ -259,7 +259,7 @@ class CreatePostViewModel(
                 // Kişisel iş - Sadece görsel veya metin (ikisi de zorunlu değil, ama en az biri olmalı)
                 if (currentState.imageUri == null && currentState.text.isBlank()) {
                     _uiState.value = currentState.copy(
-                        errorMessage = "En az bir görsel veya metin eklemelisiniz"
+                        errorMessage = "Please add at least one image or text"
                     )
                     return
                 }
@@ -269,7 +269,7 @@ class CreatePostViewModel(
             val text = currentState.text.trim()
             if (text.isEmpty() && currentState.imageUri == null) {
                 _uiState.value = currentState.copy(
-                    errorMessage = "Post metni veya görsel eklemelisiniz"
+                        errorMessage = "Please add post text or image"
                 )
                 return
             }
@@ -290,11 +290,11 @@ class CreatePostViewModel(
                     finalImageUrl = uploadImage()
                     android.util.Log.d("CreatePostViewModel", "Görsel yükleme sonucu: $finalImageUrl")
                     if (finalImageUrl == null && currentState.imageUri != null) {
-                        val errorMsg = _uiState.value.errorMessage ?: "Bilinmeyen hata"
+                        val errorMsg = _uiState.value.errorMessage ?: "Unknown error"
                         android.util.Log.e("CreatePostViewModel", "Görsel yüklenemedi, paylaşım iptal ediliyor. Hata: $errorMsg")
                         _uiState.value = _uiState.value.copy(
                             isPosting = false,
-                            errorMessage = "Görsel yüklenemedi: $errorMsg"
+                            errorMessage = "Failed to upload image: $errorMsg"
                         )
                         return@launch
                     }
@@ -355,6 +355,16 @@ class CreatePostViewModel(
                     val postId = postRepository.createPost(post)
                     val jobId = jobRepository.createJob(job)
                     
+                    // Eğer koleksiyonun thumbnail'i yoksa ve work'in resmi varsa, koleksiyonun thumbnail'ini güncelle
+                    if (currentState.selectedCollectionId != null && finalImageUrl != null && finalImageUrl.isNotBlank()) {
+                        val collection = collectionRepository.getCollection(currentState.selectedCollectionId)
+                        if (collection != null && (collection.thumbnailUrl == null || collection.thumbnailUrl.isBlank())) {
+                            val updatedCollection = collection.copy(thumbnailUrl = finalImageUrl)
+                            collectionRepository.updateCollection(updatedCollection)
+                            android.util.Log.d("CreatePostViewModel", "Koleksiyon thumbnail'i güncellendi: ${collection.name}")
+                        }
+                    }
+                    
                     android.util.Log.d("CreatePostViewModel", "Work başarıyla oluşturuldu: postId=$postId, jobId=$jobId")
                 } else {
                     // Normal post paylaşımı
@@ -380,10 +390,10 @@ class CreatePostViewModel(
                 android.util.Log.e("CreatePostViewModel", "Paylaşım hatası", e)
                 val errorMsg = when {
                     e.message?.contains("PERMISSION_DENIED") == true -> 
-                        "Yetki hatası: Firestore Security Rules kontrol edin"
+                        "Permission error: Please check Firestore Security Rules"
                     e.message?.contains("UNAUTHENTICATED") == true -> 
-                        "Giriş yapmamış kullanıcı. Lütfen tekrar giriş yapın"
-                    else -> e.message ?: "Paylaşılamadı: ${e.javaClass.simpleName}"
+                        "User not logged in. Please sign in again"
+                    else -> e.message ?: "Failed to share: ${e.javaClass.simpleName}"
                 }
                 _uiState.value = currentState.copy(
                     isPosting = false,

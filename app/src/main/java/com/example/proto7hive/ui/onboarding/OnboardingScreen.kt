@@ -91,7 +91,7 @@ fun OnboardingRoute(
             onClick = { isSignUp = !isSignUp },
             modifier = Modifier.padding(top = 8.dp)
         ) {
-            Text(if (isSignUp) "Zaten hesabınız var mı? Giriş yapın" else "Hesabınız yok mu? Oluşturun")
+            Text(if (isSignUp) "Already have an account? Sign in" else "Don't have an account? Create one")
         }
 
         if (state.isSignedIn) {
@@ -99,7 +99,7 @@ fun OnboardingRoute(
                 onClick = onContinue,
                 modifier = Modifier.padding(top = 16.dp)
             ) {
-                Text("Devam Et")
+                Text("Continue")
             }
         }
 
