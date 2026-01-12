@@ -110,5 +110,24 @@ service cloud.firestore {
         request.resource.data.jobId == resource.data.jobId &&
         request.resource.data.jobOwnerId == resource.data.jobOwnerId;
     }
+    
+    // Collections koleksiyonu - Koleksiyonlar
+    match /collections/{collectionId} {
+      // Okuma: Giriş yapmış herkes koleksiyonları okuyabilir
+      allow read: if request.auth != null;
+      
+      // Oluşturma: Kullanıcılar kendi koleksiyonlarını oluşturabilir
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Güncelleme: Sadece koleksiyon sahibi güncelleyebilir (userId değiştirilemez)
+      allow update: if request.auth != null && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId;
+      
+      // Silme: Sadece koleksiyon sahibi silebilir
+      allow delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
   }
 }

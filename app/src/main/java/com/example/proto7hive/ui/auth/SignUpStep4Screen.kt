@@ -106,7 +106,7 @@ fun SignUpStep4Screen(
             // Question
             Text(
                 text = "What is your date of birth?",
-                color = BrandText,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -133,15 +133,15 @@ fun SignUpStep4Screen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.width(100.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = BrandText,
-                        unfocusedTextColor = BrandText,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                         focusedPlaceholderColor = Color(0xFF999999),
                         unfocusedPlaceholderColor = Color(0xFF999999),
                         focusedLabelColor = Color(0xFF999999),
                         unfocusedLabelColor = Color(0xFF999999),
-                        cursorColor = BrandText
+                        cursorColor = MaterialTheme.colorScheme.onSurface
                     ),
                     shape = RoundedCornerShape(8.dp)
                 )
@@ -163,15 +163,15 @@ fun SignUpStep4Screen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.width(100.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = BrandText,
-                        unfocusedTextColor = BrandText,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                         focusedPlaceholderColor = Color(0xFF999999),
                         unfocusedPlaceholderColor = Color(0xFF999999),
                         focusedLabelColor = Color(0xFF999999),
                         unfocusedLabelColor = Color(0xFF999999),
-                        cursorColor = BrandText
+                        cursorColor = MaterialTheme.colorScheme.onSurface
                     ),
                     shape = RoundedCornerShape(8.dp)
                 )
@@ -193,15 +193,15 @@ fun SignUpStep4Screen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.width(120.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = BrandText,
-                        unfocusedTextColor = BrandText,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                         focusedPlaceholderColor = Color(0xFF999999),
                         unfocusedPlaceholderColor = Color(0xFF999999),
                         focusedLabelColor = Color(0xFF999999),
                         unfocusedLabelColor = Color(0xFF999999),
-                        cursorColor = BrandText
+                        cursorColor = MaterialTheme.colorScheme.onSurface
                     ),
                     shape = RoundedCornerShape(8.dp)
                 )

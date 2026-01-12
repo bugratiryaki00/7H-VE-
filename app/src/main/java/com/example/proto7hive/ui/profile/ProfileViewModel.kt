@@ -13,10 +13,13 @@ import com.example.proto7hive.data.ConnectionRepository
 import com.example.proto7hive.data.FirestoreConnectionRepository
 import com.example.proto7hive.data.NotificationRepository
 import com.example.proto7hive.data.FirestoreNotificationRepository
+import com.example.proto7hive.data.CollectionRepository
+import com.example.proto7hive.data.FirestoreCollectionRepository
 import com.example.proto7hive.model.Post
 import com.example.proto7hive.model.Job
 import com.example.proto7hive.model.User
 import com.example.proto7hive.model.Notification
+import com.example.proto7hive.model.Collection
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +30,7 @@ data class ProfileUiState(
     val user: User? = null,
     val posts: List<Post> = emptyList(),
     val jobs: List<Job> = emptyList(),
+    val collections: List<Collection> = emptyList(), // Kullanıcının koleksiyonları
     val connectionsCount: Int = 0,
     val isConnected: Boolean = false, // Current user bu kullanıcıyı takip ediyor mu?
     val connectionRequestStatus: String? = null, // null, "pending" (gönderildi, bekliyor), "sent" (gönderildi)
@@ -39,7 +43,8 @@ class ProfileViewModel(
     private val postRepository: PostRepository = FirestorePostRepository(),
     private val jobRepository: JobRepository = FirestoreJobRepository(),
     private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository(),
-    private val notificationRepository: NotificationRepository = FirestoreNotificationRepository()
+    private val notificationRepository: NotificationRepository = FirestoreNotificationRepository(),
+    private val collectionRepository: CollectionRepository = FirestoreCollectionRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -128,6 +133,9 @@ class ProfileViewModel(
                 // Jobs'ları çek
                 val jobs = jobRepository.getJobsByUserId(targetUserId)
                 
+                // Koleksiyonları çek
+                val collections = collectionRepository.getCollectionsByUserId(targetUserId)
+                
                 // Bağlantı sayısı
                 val connections = connectionRepository.getConnections(targetUserId)
                 val connectionsCount = connections.size
@@ -159,6 +167,7 @@ class ProfileViewModel(
                     user = user,
                     posts = posts,
                     jobs = jobs,
+                    collections = collections,
                     connectionsCount = connectionsCount,
                     isConnected = isConnected,
                     connectionRequestStatus = connectionRequestStatus
@@ -183,12 +192,13 @@ class ProfileViewModelFactory(
     private val postRepository: PostRepository = FirestorePostRepository(),
     private val jobRepository: JobRepository = FirestoreJobRepository(),
     private val connectionRepository: ConnectionRepository = FirestoreConnectionRepository(),
-    private val notificationRepository: NotificationRepository = FirestoreNotificationRepository()
+    private val notificationRepository: NotificationRepository = FirestoreNotificationRepository(),
+    private val collectionRepository: CollectionRepository = FirestoreCollectionRepository()
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
-            return ProfileViewModel(userId, userRepository, postRepository, jobRepository, connectionRepository, notificationRepository) as T
+            return ProfileViewModel(userId, userRepository, postRepository, jobRepository, connectionRepository, notificationRepository, collectionRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

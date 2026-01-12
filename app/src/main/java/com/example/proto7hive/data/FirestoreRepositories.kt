@@ -11,6 +11,7 @@ import com.example.proto7hive.model.User
 import com.example.proto7hive.model.Job
 import com.example.proto7hive.model.ConnectionRequest
 import com.example.proto7hive.model.JobApplication
+import com.example.proto7hive.model.Collection
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FieldPath
@@ -646,5 +647,74 @@ class FirestoreJobApplicationRepository(
             .get()
             .await()
         return !snap.isEmpty
+    }
+}
+
+class FirestoreCollectionRepository(
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+) : CollectionRepository {
+    override suspend fun createCollection(collection: Collection): String {
+        val docRef = db.collection("collections").document()
+        val data = hashMapOf(
+            "name" to collection.name,
+            "userId" to collection.userId,
+            "thumbnailUrl" to (collection.thumbnailUrl ?: ""),
+            "createdAt" to collection.createdAt
+        )
+        docRef.set(data).await()
+        return docRef.id
+    }
+
+    override suspend fun getCollectionsByUserId(userId: String): List<Collection> {
+        val snap = db.collection("collections")
+            .whereEqualTo("userId", userId)
+            .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .await()
+        return snap.documents.mapNotNull { doc ->
+            val data = doc.data
+            Collection(
+                id = doc.id,
+                name = data?.get("name") as? String ?: "",
+                userId = data?.get("userId") as? String ?: "",
+                thumbnailUrl = data?.get("thumbnailUrl") as? String,
+                createdAt = (data?.get("createdAt") as? Long) ?: 0L
+            )
+        }
+    }
+
+    override suspend fun getCollection(collectionId: String): Collection? {
+        val doc = db.collection("collections").document(collectionId).get().await()
+        if (!doc.exists()) return null
+        val data = doc.data
+        return Collection(
+            id = doc.id,
+            name = data?.get("name") as? String ?: "",
+            userId = data?.get("userId") as? String ?: "",
+            thumbnailUrl = data?.get("thumbnailUrl") as? String,
+            createdAt = (data?.get("createdAt") as? Long) ?: 0L
+        )
+    }
+
+    override suspend fun updateCollection(collection: Collection) {
+        val data = hashMapOf<String, Any>(
+            "name" to collection.name,
+            "thumbnailUrl" to (collection.thumbnailUrl ?: "")
+        )
+        db.collection("collections").document(collection.id).update(data).await()
+    }
+
+    override suspend fun deleteCollection(collectionId: String) {
+        db.collection("collections").document(collectionId).delete().await()
+    }
+
+    override suspend fun getJobsByCollectionId(collectionId: String): List<Job> {
+        val snap = db.collection("jobs")
+            .whereEqualTo("collectionId", collectionId)
+            .get()
+            .await()
+        return snap.documents.mapNotNull { doc ->
+            doc.toObject(Job::class.java)?.copy(id = doc.id)
+        }
     }
 }

@@ -80,7 +80,9 @@ data class Job(
     val description: String = "",
     val requiredSkills: List<String> = emptyList(),
     val imageUrl: String? = null,
-    val userId: String = "" // İşi paylaşan kullanıcı ID'si (işveren)
+    val userId: String = "", // İşi paylaşan kullanıcı ID'si (işveren)
+    val collectionId: String? = null, // Koleksiyon ID'si (work koleksiyonuna ait)
+    val isJobPosting: Boolean = true // true = çalışan arıyor, false = kişisel iş/portfolio
 )
 
 @Serializable
@@ -131,6 +133,15 @@ data class JobApplication(
     val status: String = "pending", // "pending", "accepted", "rejected"
     val timestamp: Long = 0L, // Unix timestamp (milisaniye)
     val message: String? = null // Opsiyonel cover letter
+)
+
+@Serializable
+data class Collection(
+    val id: String = "",
+    val name: String = "",
+    val userId: String = "", // Koleksiyon sahibi
+    val thumbnailUrl: String? = null, // Koleksiyon görseli
+    val createdAt: Long = 0L // Unix timestamp (milisaniye)
 )
 
 

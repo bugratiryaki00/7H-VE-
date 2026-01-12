@@ -6,6 +6,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.*
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -106,7 +108,7 @@ fun CreatePostScreen(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close",
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -143,7 +145,7 @@ fun CreatePostScreen(
                     containerColor = BrandYellow,
                     contentColor = Color.Black,
                     disabledContainerColor = Color.Gray,
-                    disabledContentColor = Color.White
+                    disabledContentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.height(36.dp)
@@ -181,10 +183,10 @@ fun CreatePostScreen(
                 Button(
                     onClick = { viewModel.setPostType("post") },
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (state.postType == "post") BrandYellow else MaterialTheme.colorScheme.surface,
-                        contentColor = if (state.postType == "post") Color.Black else Color.White
-                    ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (state.postType == "post") BrandYellow else MaterialTheme.colorScheme.surface,
+                    contentColor = if (state.postType == "post") Color.Black else MaterialTheme.colorScheme.onSurface
+                ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
@@ -197,10 +199,10 @@ fun CreatePostScreen(
                 Button(
                     onClick = { viewModel.setPostType("work") },
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (state.postType == "work") BrandYellow else MaterialTheme.colorScheme.surface,
-                        contentColor = if (state.postType == "work") Color.Black else Color.White
-                    ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (state.postType == "work") BrandYellow else MaterialTheme.colorScheme.surface,
+                    contentColor = if (state.postType == "work") Color.Black else MaterialTheme.colorScheme.onSurface
+                ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
@@ -384,6 +386,7 @@ private fun WorkFormContent(
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0 = Temel Bilgiler, 1 = Açıklama & Fotoğraf
     var newSkill by remember { mutableStateOf("") }
+    var showCreateCollectionDialog by remember { mutableStateOf(false) }
     val pickMedia = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
@@ -393,42 +396,145 @@ private fun WorkFormContent(
     }
 
     val workTypes = listOf("Full-time", "Part-time", "Remote", "Hybrid", "On-site")
+    
+    // Koleksiyon oluşturma dialog'u
+    if (showCreateCollectionDialog) {
+        CreateCollectionDialog(
+            onDismiss = { showCreateCollectionDialog = false },
+            onCreate = { collectionName ->
+                viewModel.createCollection(collectionName) { collectionId ->
+                    viewModel.updateSelectedCollection(collectionId)
+                    showCreateCollectionDialog = false
+                }
+            }
+        )
+    }
+
+    // Eğer isJobPosting henüz seçilmediyse, seçim ekranını göster
+    if (state.isJobPosting == null) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Text(
+                text = "Çalışan arıyor musunuz?",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            // Çalışan Arıyorum
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { viewModel.setIsJobPosting(true) },
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(2.dp, BrandYellow)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Çalışan Arıyorum",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "İş ilanı paylaşmak için tüm bilgileri doldurmanız gerekir",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
+            }
+            
+            // Kişisel İş/Portfolio
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { viewModel.setIsJobPosting(false) },
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Kişisel İş/Portfolio",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Sadece görsel ve koleksiyon seçimi yeterli",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        }
+        return
+    }
 
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        // Tab Row
-        TabRow(
-            selectedTabIndex = selectedTab,
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = BrandYellow
-        ) {
-            Tab(
-                selected = selectedTab == 0,
-                onClick = { selectedTab = 0 },
-                text = { Text("Basic Information", color = if (selectedTab == 0) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) }
-            )
-            Tab(
-                selected = selectedTab == 1,
-                onClick = { selectedTab = 1 },
-                text = { Text("Description & Photo", color = if (selectedTab == 1) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) }
-            )
+        // Tab Row - Sadece çalışan arıyorsa göster
+        if (state.isJobPosting == true) {
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = MaterialTheme.colorScheme.background,
+                contentColor = BrandYellow
+            ) {
+                Tab(
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
+                    text = { Text("Basic Information", color = if (selectedTab == 0) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) }
+                )
+                Tab(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    text = { Text("Description & Photo", color = if (selectedTab == 1) BrandYellow else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) }
+                )
+            }
         }
 
         // Tab Content
         Box(modifier = Modifier.weight(1f)) {
-            when (selectedTab) {
-                0 -> WorkBasicInfoTab(
+            if (state.isJobPosting == true) {
+                // Çalışan arıyor - Mevcut tab yapısı
+                when (selectedTab) {
+                    0 -> WorkBasicInfoTab(
+                        state = state,
+                        viewModel = viewModel,
+                        newSkill = newSkill,
+                        onNewSkillChange = { newSkill = it },
+                        workTypes = workTypes,
+                        onShowCreateCollectionDialog = { showCreateCollectionDialog = true }
+                    )
+                    1 -> WorkDescriptionAndImageTab(
+                        state = state,
+                        viewModel = viewModel,
+                        pickMedia = pickMedia
+                    )
+                }
+            } else {
+                // Kişisel iş - Sadece koleksiyon + görsel/metin
+                WorkPortfolioContent(
                     state = state,
                     viewModel = viewModel,
-                    newSkill = newSkill,
-                    onNewSkillChange = { newSkill = it },
-                    workTypes = workTypes
-                )
-                1 -> WorkDescriptionAndImageTab(
-                    state = state,
-                    viewModel = viewModel,
-                    pickMedia = pickMedia
+                    pickMedia = pickMedia,
+                    onShowCreateCollectionDialog = { showCreateCollectionDialog = true }
                 )
             }
         }
@@ -442,7 +548,8 @@ private fun WorkBasicInfoTab(
     viewModel: CreatePostViewModel,
     newSkill: String,
     onNewSkillChange: (String) -> Unit,
-    workTypes: List<String>
+    workTypes: List<String>,
+    onShowCreateCollectionDialog: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -454,15 +561,15 @@ private fun WorkBasicInfoTab(
         OutlinedTextField(
             value = state.workTitle,
             onValueChange = { viewModel.updateWorkTitle(it) },
-            label = { Text("Job Title *", color = Color.White) },
+            label = { Text("Job Title *", color = MaterialTheme.colorScheme.onSurface) },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = BrandYellow,
-                unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                 focusedLabelColor = BrandYellow,
-                unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             ),
             singleLine = true
         )
@@ -471,15 +578,15 @@ private fun WorkBasicInfoTab(
         OutlinedTextField(
             value = state.workCompany,
             onValueChange = { viewModel.updateWorkCompany(it) },
-            label = { Text("Company Name *", color = Color.White) },
+            label = { Text("Company Name *", color = MaterialTheme.colorScheme.onSurface) },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = BrandYellow,
-                unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                 focusedLabelColor = BrandYellow,
-                unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             ),
             singleLine = true
         )
@@ -488,16 +595,16 @@ private fun WorkBasicInfoTab(
         OutlinedTextField(
             value = state.workLocation,
             onValueChange = { viewModel.updateWorkLocation(it) },
-            label = { Text("Location", color = Color.White) },
-            placeholder = { Text("e.g: Istanbul, Remote, Hybrid/Kadıköy", color = Color.White.copy(alpha = 0.5f)) },
+            label = { Text("Location", color = MaterialTheme.colorScheme.onSurface) },
+            placeholder = { Text("e.g: Istanbul, Remote, Hybrid/Kadıköy", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)) },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = BrandYellow,
-                unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                 focusedLabelColor = BrandYellow,
-                unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             ),
             singleLine = true
         )
@@ -513,18 +620,18 @@ private fun WorkBasicInfoTab(
                 value = state.workType,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Work Type *", color = Color.White) },
-                placeholder = { Text("Select", color = Color.White.copy(alpha = 0.5f)) },
+                label = { Text("Work Type *", color = MaterialTheme.colorScheme.onSurface) },
+                placeholder = { Text("Select", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .menuAnchor(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = BrandYellow,
-                    unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     focusedLabelColor = BrandYellow,
-                    unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 ),
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
@@ -537,10 +644,83 @@ private fun WorkBasicInfoTab(
             ) {
                 workTypes.forEach { type ->
                     DropdownMenuItem(
-                        text = { Text(type, color = Color.White) },
+                        text = { Text(type, color = MaterialTheme.colorScheme.onSurface) },
                         onClick = {
                             viewModel.updateWorkType(type)
                             expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        // Collection Dropdown
+        var collectionExpanded by remember { mutableStateOf(false) }
+        val selectedCollection = state.collections.find { it.id == state.selectedCollectionId }
+        ExposedDropdownMenuBox(
+            expanded = collectionExpanded,
+            onExpandedChange = { collectionExpanded = !collectionExpanded },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = selectedCollection?.name ?: "",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Collection *", color = MaterialTheme.colorScheme.onSurface) },
+                placeholder = { Text("Select Collection", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = BrandYellow,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedLabelColor = BrandYellow,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                ),
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = collectionExpanded)
+                }
+            )
+            ExposedDropdownMenu(
+                expanded = collectionExpanded,
+                onDismissRequest = { collectionExpanded = false },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+            ) {
+                // Yeni koleksiyon oluştur seçeneği (şimdilik boş - modal daha sonra eklenecek)
+                DropdownMenuItem(
+                    text = { 
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = BrandYellow,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                "Yeni Koleksiyon Oluştur",
+                                color = BrandYellow,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    },
+                    onClick = {
+                        collectionExpanded = false
+                        onShowCreateCollectionDialog()
+                    }
+                )
+                
+                // Mevcut koleksiyonlar
+                state.collections.forEach { collection ->
+                    DropdownMenuItem(
+                        text = { Text(collection.name, color = MaterialTheme.colorScheme.onSurface) },
+                        onClick = {
+                            viewModel.updateSelectedCollection(collection.id)
+                            collectionExpanded = false
                         }
                     )
                 }
@@ -562,7 +742,7 @@ private fun WorkBasicInfoTab(
                 Text(
                     text = "Required Skills",
                     style = MaterialTheme.typography.titleSmall,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
 
@@ -574,13 +754,13 @@ private fun WorkBasicInfoTab(
                     OutlinedTextField(
                         value = newSkill,
                         onValueChange = onNewSkillChange,
-                        label = { Text("Add Skill", color = Color.White) },
+                        label = { Text("Add Skill", color = MaterialTheme.colorScheme.onSurface) },
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BrandYellow,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         ),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
@@ -623,7 +803,7 @@ private fun WorkBasicInfoTab(
                                 ) {
                                     Text(
                                         text = skill,
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                     IconButton(
@@ -633,7 +813,7 @@ private fun WorkBasicInfoTab(
                                         Icon(
                                             imageVector = Icons.Default.Close,
                                             contentDescription = "Remove",
-                                            tint = Color.White,
+                                            tint = MaterialTheme.colorScheme.onSurface,
                                             modifier = Modifier.size(16.dp)
                                         )
                                     }
@@ -681,7 +861,7 @@ private fun WorkDescriptionAndImageTab(
                     placeholder = {
                         Text(
                             text = "What do you want to share",
-                            color = Color.White.copy(alpha = 0.5f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                     },
                     modifier = Modifier
@@ -782,4 +962,261 @@ private fun WorkDescriptionAndImageTab(
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun WorkPortfolioContent(
+    state: CreatePostUiState,
+    viewModel: CreatePostViewModel,
+    pickMedia: androidx.activity.result.ActivityResultLauncher<PickVisualMediaRequest>,
+    onShowCreateCollectionDialog: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Koleksiyon Seçimi
+        Text(
+            text = "Koleksiyon *",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        var collectionExpanded by remember { mutableStateOf(false) }
+        val selectedCollection = state.collections.find { it.id == state.selectedCollectionId }
+        ExposedDropdownMenuBox(
+            expanded = collectionExpanded,
+            onExpandedChange = { collectionExpanded = !collectionExpanded },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = selectedCollection?.name ?: "",
+                onValueChange = { },
+                readOnly = true,
+                label = { Text("Koleksiyon Seç", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = collectionExpanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = BrandYellow,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedLabelColor = BrandYellow,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            )
+            ExposedDropdownMenu(
+                expanded = collectionExpanded,
+                onDismissRequest = { collectionExpanded = false },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+            ) {
+                state.collections.forEach { collection ->
+                    DropdownMenuItem(
+                        text = { Text(collection.name, color = MaterialTheme.colorScheme.onSurface) },
+                        onClick = {
+                            viewModel.updateSelectedCollection(collection.id)
+                            collectionExpanded = false
+                        }
+                    )
+                }
+                DropdownMenuItem(
+                    text = { 
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = BrandYellow)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Yeni Koleksiyon Oluştur", color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    },
+                    onClick = {
+                        collectionExpanded = false
+                        onShowCreateCollectionDialog()
+                    }
+                )
+            }
+        }
+        
+        // Metin (Opsiyonel)
+        Text(
+            text = "Açıklama (Opsiyonel)",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        TextField(
+            value = state.text,
+            onValueChange = { viewModel.updateText(it) },
+            placeholder = {
+                Text(
+                    text = "İsteğe bağlı açıklama ekleyin",
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 100.dp),
+            colors = TextFieldDefaults.colors(
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = BrandYellow,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            ),
+            shape = RoundedCornerShape(8.dp),
+            maxLines = 5
+        )
+        
+        // Görsel Ekleme
+        Text(
+            text = "Görsel (Opsiyonel)",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        if (state.imageUri != null || state.imageUrl != null) {
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                AsyncImage(
+                    model = state.imageUri ?: state.imageUrl,
+                    contentDescription = "Selected Image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                IconButton(
+                    onClick = { viewModel.removeImage() },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Remove Image",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        } else {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clickable {
+                        pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Image,
+                            contentDescription = "Add Image",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            text = "Görsel Ekle",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CreateCollectionDialog(
+    onDismiss: () -> Unit,
+    onCreate: (String) -> Unit
+) {
+    var collectionName by remember { mutableStateOf("") }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Yeni Koleksiyon Oluştur",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = collectionName,
+                    onValueChange = { collectionName = it },
+                    label = { Text("Koleksiyon Adı", color = MaterialTheme.colorScheme.onSurface) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BrandYellow,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedLabelColor = BrandYellow,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    ),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (collectionName.isNotBlank()) {
+                        onCreate(collectionName.trim())
+                    }
+                },
+                enabled = collectionName.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BrandYellow,
+                    contentColor = Color.Black,
+                    disabledContainerColor = MaterialTheme.colorScheme.surface,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+            ) {
+                Text("Oluştur")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text(
+                    "İptal",
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurface
+    )
 }

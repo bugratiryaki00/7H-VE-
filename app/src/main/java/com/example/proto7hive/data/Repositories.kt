@@ -99,6 +99,15 @@ interface JobApplicationRepository {
     suspend fun hasAppliedToJob(jobId: String, applicantId: String): Boolean // Kullanıcı bu işe başvurmuş mu?
 }
 
+interface CollectionRepository {
+    suspend fun createCollection(collection: com.example.proto7hive.model.Collection): String // Yeni koleksiyon oluştur (döner: collectionId)
+    suspend fun getCollectionsByUserId(userId: String): List<com.example.proto7hive.model.Collection> // Kullanıcının koleksiyonlarını getir
+    suspend fun getCollection(collectionId: String): com.example.proto7hive.model.Collection? // Tek bir koleksiyon getir
+    suspend fun updateCollection(collection: com.example.proto7hive.model.Collection): Unit // Koleksiyon güncelle
+    suspend fun deleteCollection(collectionId: String): Unit // Koleksiyon sil
+    suspend fun getJobsByCollectionId(collectionId: String): List<Job> // Koleksiyondaki işleri getir
+}
+
 class MockPortfolioRepository : PortfolioRepository {
     override suspend fun getPortfolios(): List<PortfolioCard> = MockData.portfolios
 }

@@ -62,7 +62,7 @@ fun SignUpStep3Screen(
             // Question
             Text(
                 text = "What is your gender?",
-                color = BrandText,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -86,7 +86,7 @@ fun SignUpStep3Screen(
                 ) {
                     Text(
                         text = gender,
-                        color = BrandText,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 16.sp,
                         modifier = Modifier.weight(1f)
                     )

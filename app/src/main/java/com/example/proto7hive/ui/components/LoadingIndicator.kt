@@ -3,6 +3,7 @@ package com.example.proto7hive.ui.components
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -18,13 +19,6 @@ import com.example.proto7hive.ui.theme.BrandYellow
 import kotlin.math.cos
 import kotlin.math.sin
 
-/**
- * Figma tasarımına göre özel loading indicator
- * - Dikey siyah dikdörtgen
- * - Alt kısmında altıgen şekil
- * - Altıgen sarı renkle doluyor
- * - Sonra tüm dikdörtgen sarı oluyor
- */
 @Composable
 fun HexagonLoadingIndicator(
     modifier: Modifier = Modifier
@@ -45,13 +39,16 @@ fun HexagonLoadingIndicator(
         label = "progress"
     )
     
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val outlineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+    
     Canvas(modifier = modifier.fillMaxSize()) {
         val width = size.width
         val height = size.height
         
-        // Tüm ekranı siyah yap
+        // Tüm ekranı tema rengine göre yap
         drawRect(
-            color = Color.Black,
+            color = backgroundColor,
             topLeft = Offset(0f, 0f),
             size = Size(width, height)
         )
@@ -68,8 +65,8 @@ fun HexagonLoadingIndicator(
             radius = hexRadius
         )
         
-        // Altıgen outline (gri, her zaman göster)
-        drawPath(hexPath, color = Color.Gray.copy(alpha = 0.5f), style = Stroke(width = 4f))
+        // Altıgen outline (tema rengine göre, her zaman göster)
+        drawPath(hexPath, color = outlineColor, style = Stroke(width = 4f))
         
         if (progress < 0.5f) {
             // İlk aşama: Altıgen doluyor (altından yukarıya)

@@ -128,7 +128,7 @@ fun ForgotPasswordScreen(
             // Title
             Text(
                 text = "Forgot Password?",
-                color = BrandText,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -159,13 +159,13 @@ fun ForgotPasswordScreen(
                 enabled = !state.isEmailSent && !state.isLoading,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = BrandText,
-                    unfocusedTextColor = BrandText,
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.White,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                     focusedPlaceholderColor = Color(0xFF999999),
                     unfocusedPlaceholderColor = Color(0xFF999999),
-                    cursorColor = BrandText,
+                    cursorColor = MaterialTheme.colorScheme.onSurface,
                     disabledTextColor = Color(0xFF888888),
                     disabledBorderColor = Color(0xFF555555)
                 ),

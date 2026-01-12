@@ -74,7 +74,7 @@ fun WelcomeScreen(
             ) {
                 Text(
                     text = "Login",
-                    color = Color(0xFFCCCCCC), // Light gray
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Normal
                 )
@@ -101,7 +101,7 @@ fun WelcomeScreen(
             ) {
                 Text(
                     text = "Sign Up",
-                    color = Color(0xFFCCCCCC), // Light gray
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Normal
                 )

@@ -251,7 +251,7 @@ fun SignUpStep5Screen(
             // Skip Text
             Text(
                 text = "Skip",
-                color = BrandText,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier.clickable {

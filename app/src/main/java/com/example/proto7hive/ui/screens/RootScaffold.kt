@@ -47,6 +47,7 @@ import com.example.proto7hive.ui.auth.ForgotPasswordScreen
 import com.example.proto7hive.ui.comments.CommentsRoute
 import com.example.proto7hive.ui.notifications.NotificationRoute
 import com.example.proto7hive.ui.settings.SettingsRoute
+import com.example.proto7hive.ui.settings.AccountInformationRoute
 import com.example.proto7hive.ui.auth.AuthViewModel
 import com.example.proto7hive.ui.auth.AuthViewModelFactory
 import com.example.proto7hive.data.AuthRepository
@@ -79,6 +80,7 @@ object Routes {
     const val SEARCH = "search"
     const val NOTIFICATIONS = "notifications"
     const val SETTINGS = "settings"
+    const val ACCOUNT_INFORMATION = "account_information"
 
     fun projectDetail(projectId: String) = "project/$projectId"
     fun postDetail(postId: String) = "post/$postId"
@@ -113,6 +115,7 @@ fun RootScaffold(
                 Routes.COMMENTS_POST,
                 Routes.COMMENTS_JOB,
                 Routes.SETTINGS,
+                Routes.ACCOUNT_INFORMATION,
                 Routes.SEARCH,
                 Routes.NOTIFICATIONS
             )) {
@@ -221,7 +224,7 @@ fun RootScaffold(
                         navController.popBackStack()
                     },
                     onNavigateToAccountInformation = {
-                        // TODO: Account Information ekranı eklenecek
+                        navController.navigate(Routes.ACCOUNT_INFORMATION)
                     },
                     onNavigateToSecurity = {
                         // TODO: Security ekranı eklenecek
@@ -242,6 +245,13 @@ fun RootScaffold(
                         navController.navigate(Routes.WELCOME) {
                             popUpTo(0) { inclusive = true }
                         }
+                    }
+                )
+            }
+            composable(Routes.ACCOUNT_INFORMATION) {
+                AccountInformationRoute(
+                    onBack = {
+                        navController.popBackStack()
                     }
                 )
             }

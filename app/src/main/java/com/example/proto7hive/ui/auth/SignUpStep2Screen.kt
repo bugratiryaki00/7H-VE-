@@ -65,7 +65,7 @@ fun SignUpStep2Screen(
             // Instruction Text
             Text(
                 text = "Enter the 6-digit OTP code in the Yeditepe email extension.",
-                color = BrandText,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -98,13 +98,13 @@ fun SignUpStep2Screen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = BrandText,
-                    unfocusedTextColor = BrandText,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     focusedBorderColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
                     focusedPlaceholderColor = Color(0xFF999999),
                     unfocusedPlaceholderColor = Color(0xFF999999),
-                    cursorColor = BrandText
+                    cursorColor = MaterialTheme.colorScheme.onSurface
                 ),
                 shape = RoundedCornerShape(8.dp)
             )
