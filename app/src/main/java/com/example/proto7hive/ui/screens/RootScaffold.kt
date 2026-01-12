@@ -48,6 +48,7 @@ import com.example.proto7hive.ui.comments.CommentsRoute
 import com.example.proto7hive.ui.notifications.NotificationRoute
 import com.example.proto7hive.ui.settings.SettingsRoute
 import com.example.proto7hive.ui.settings.AccountInformationRoute
+import com.example.proto7hive.ui.settings.AboutRoute
 import com.example.proto7hive.ui.auth.AuthViewModel
 import com.example.proto7hive.ui.auth.AuthViewModelFactory
 import com.example.proto7hive.data.AuthRepository
@@ -81,6 +82,7 @@ object Routes {
     const val NOTIFICATIONS = "notifications"
     const val SETTINGS = "settings"
     const val ACCOUNT_INFORMATION = "account_information"
+    const val ABOUT = "about"
 
     fun projectDetail(projectId: String) = "project/$projectId"
     fun postDetail(postId: String) = "post/$postId"
@@ -238,7 +240,7 @@ fun RootScaffold(
                         // TODO: Language ekranı eklenecek
                     },
                     onNavigateToAbout = {
-                        // TODO: About ekranı eklenecek
+                        navController.navigate(Routes.ABOUT)
                     },
                     onLogout = {
                         authViewModel.signOut()
@@ -250,6 +252,13 @@ fun RootScaffold(
             }
             composable(Routes.ACCOUNT_INFORMATION) {
                 AccountInformationRoute(
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable(Routes.ABOUT) {
+                AboutRoute(
                     onBack = {
                         navController.popBackStack()
                     }
