@@ -11,7 +11,7 @@
 - **Dil:** Kotlin
 - **UI Framework:** Jetpack Compose (Material 3)
 - **Mimari:** MVVM + Repository Pattern
-- **Backend:** Firebase (Authentication, Firestore, Storage )
+- **Backend:** Firebase (Authentication, Firestore, Storage)
 - **Min SDK:** 24 (Android 7.0)
 
 ## Dokümantasyon
